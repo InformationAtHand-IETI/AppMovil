@@ -68,6 +68,7 @@ dependencies {
     // Google Maps
     implementation("com.google.android.gms:play-services-maps:18.2.0")
     implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("com.google.android.material:material:1.11.0")
 
     // Retrofit para API REST
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
@@ -81,6 +82,7 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
+    implementation("androidx.cardview:cardview:1.0.0")
 
     // ViewModel y LiveData
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1")

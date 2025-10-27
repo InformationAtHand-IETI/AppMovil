@@ -1,43 +1,83 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:padding="24dp"
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="32dp"
+    android:gravity="center_horizontal"
+    android:background="#F8F9FA">
 
+    <!-- Título -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Crear Cuenta"
+        android:textSize="28sp"
+        android:textColor="#1A237E"
+        android:textStyle="bold"
+        android:layout_marginBottom="40dp" />
+
+    <!-- Campo Nombre -->
     <EditText
-        android:id="@+id/etNombre"
-        android:hint="Nombre Completo"
+        android:id="@+id/etName"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="60dp"
+        android:hint="Nombre completo"
+        android:inputType="textPersonName"
+        android:background="@android:drawable/editbox_background"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:layout_marginBottom="20dp" />
 
+    <!-- Campo Email -->
     <EditText
-        android:id="@+id/etTipoId"
-        android:hint="Tipo de identificación"
+        android:id="@+id/etEmail"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
-    <EditText
-        android:id="@+id/etNumeroId"
-        android:hint="Número de identificación"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
-    <EditText
-        android:id="@+id/etCelular"
-        android:hint="Número de celular"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
-    <EditText
-        android:id="@+id/etCorreo"
-        android:hint="Correo"
+        android:layout_height="60dp"
+        android:hint="Email"
         android:inputType="textEmailAddress"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:background="@android:drawable/editbox_background"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:layout_marginBottom="20dp" />
 
-    <Button
-        android:id="@+id/btnFinalizar"
-        android:text="Finalizar Registro"
+    <!-- Campo Contraseña -->
+    <EditText
+        android:id="@+id/etPassword"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="60dp"
+        android:hint="Contraseña"
+        android:inputType="textPassword"
+        android:background="@android:drawable/editbox_background"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:layout_marginBottom="30dp" />
+
+    <!-- Botón Registro -->
+    <Button
+        android:id="@+id/btnRegister"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:text="Registrarse"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:backgroundTint="#1A237E"
+        android:textColor="#FFFFFF"
+        android:layout_marginTop="10dp" />
+
+    <!-- Texto para ir a Login -->
+    <TextView
+        android:id="@+id/tvGoToLogin"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="¿Ya tienes cuenta? Inicia sesión"
+        android:textColor="#1A237E"
+        android:textSize="14sp"
+        android:layout_marginTop="20dp"
+        android:padding="8dp"
+        android:clickable="true"
+        android:focusable="true" />
+
 </LinearLayout>
+

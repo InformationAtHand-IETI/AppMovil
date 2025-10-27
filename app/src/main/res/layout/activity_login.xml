@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@drawable/gradient_background">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:gravity="center_horizontal">
+
+        <!-- Espaciador superior -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="60dp" />
+
+        <!-- Logo o Ícono -->
+        <ImageView
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@android:drawable/ic_dialog_map"
+            android:layout_marginBottom="20dp"
+            app:tint="#FFFFFF" />
+
+        <!-- Título Principal -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Bienvenido"
+            android:textSize="36sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Subtítulo -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Inicia sesión para continuar"
+            android:textSize="16sp"
+            android:textColor="#E0E0E0"
+            android:layout_marginBottom="50dp" />
+
+        <!-- Tarjeta con campos de entrada -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="8dp"
+            android:layout_marginBottom="30dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="24dp">
+
+                <!-- Campo Email con Ícono -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/input_background"
+                    android:padding="12dp"
+                    android:layout_marginBottom="16dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@android:drawable/ic_dialog_email"
+                        android:layout_marginEnd="12dp"
+                        app:tint="#1A237E" />
+
+                    <EditText
+                        android:id="@+id/etEmail"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:hint="Email"
+                        android:inputType="textEmailAddress"
+                        android:background="@android:color/transparent"
+                        android:textSize="16sp"
+                        android:textColor="#333333"
+                        android:textColorHint="#999999" />
+                </LinearLayout>
+
+                <!-- Campo Contraseña con Ícono -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/input_background"
+                    android:padding="12dp"
+                    android:layout_marginBottom="24dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@android:drawable/ic_lock_idle_lock"
+                        android:layout_marginEnd="12dp"
+                        app:tint="#1A237E" />
+
+                    <EditText
+                        android:id="@+id/etPassword"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:hint="Contraseña"
+                        android:inputType="textPassword"
+                        android:background="@android:color/transparent"
+                        android:textSize="16sp"
+                        android:textColor="#333333"
+                        android:textColorHint="#999999" />
+                </LinearLayout>
+
+                <!-- Botón Iniciar Sesión -->
+                <Button
+                    android:id="@+id/btnLogin"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:text="Iniciar Sesión"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/button_background"
+                    android:elevation="4dp"
+                    android:textAllCaps="false"
+                    android:fontFamily="sans-serif-medium" />
+
+                <!-- ProgressBar -->
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="16dp"
+                    android:visibility="gone"
+                    android:indeterminateTint="#1A237E" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Divisor -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#FFFFFF"
+            android:alpha="0.3"
+            android:layout_marginVertical="20dp" />
+
+        <!-- Texto para ir a Registro -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="¿No tienes cuenta? "
+                android:textColor="#FFFFFF"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tvGoToRegister"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Regístrate"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="8dp" />
+        </LinearLayout>
+
+        <!-- Espaciador inferior -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="40dp" />
+
+    </LinearLayout>
+</ScrollView>

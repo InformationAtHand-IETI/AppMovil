@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.widget.Button
 
 class MainActivity : AppCompatActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -24,5 +25,11 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, MapActivity::class.java))
         }
 
+        // Ir a reportes (puedes crear ReportsActivity si lo necesitas)
+        btnReportes.setOnClickListener {
+            // startActivity(Intent(this, ReportsActivity::class.java))
+            // Por ahora va al mapa donde se pueden ver todos los reportes
+            startActivity(Intent(this, MapActivity::class.java))
+        }
     }
 }

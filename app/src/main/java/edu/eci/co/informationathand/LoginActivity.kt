@@ -2,51 +2,54 @@ package edu.eci.co.informationathand
 
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import edu.eci.co.informationathand.utils.CognitoAuthHelper
 import edu.eci.co.informationathand.utils.StorageHelper
+import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
 
-    private lateinit var etEmail: EditText
+    private lateinit var etEmailOrUsername: EditText
     private lateinit var etPassword: EditText
     private lateinit var btnLogin: Button
     private lateinit var tvRegister: TextView
     private lateinit var progressBar: ProgressBar
     private lateinit var storageHelper: StorageHelper
+    private lateinit var cognitoAuth: CognitoAuthHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
-        // 🔹 Inicializar StorageHelper
         storageHelper = StorageHelper(this)
+        cognitoAuth = CognitoAuthHelper()
 
-        // 🔹 Si el usuario ya está logueado, ir directamente al mapa
-        if (storageHelper.isLoggedIn()) {
-            navigateToMap()
-            return
+        // Verificar sesión existente
+        lifecycleScope.launch {
+            if (cognitoAuth.isUserSignedIn()) {
+                navigateToMap()
+                return@launch
+            }
         }
 
-        // 🔹 Inicializar vistas
-        etEmail = findViewById(R.id.etEmail)
+        // Inicializar vistas
+        etEmailOrUsername = findViewById(R.id.etEmail)
         etPassword = findViewById(R.id.etPassword)
         btnLogin = findViewById(R.id.btnLogin)
         tvRegister = findViewById(R.id.tvRegister)
         progressBar = findViewById(R.id.progressBar)
 
-        // 🔹 Botón para iniciar sesión
         btnLogin.setOnClickListener {
             attemptLogin()
         }
 
-        // 🔹 Ir a la pantalla de registro
         tvRegister.setOnClickListener {
             val intent = Intent(this, RegisterActivity::class.java)
             startActivity(intent)
@@ -54,16 +57,18 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun attemptLogin() {
-        val email = etEmail.text.toString().trim()
+        val emailOrUsername = etEmailOrUsername.text.toString().trim()
         val password = etPassword.text.toString().trim()
 
-        if (email.isEmpty() || password.isEmpty()) {
+        // Validaciones básicas
+        if (emailOrUsername.isEmpty() || password.isEmpty()) {
             Toast.makeText(this, "Por favor completa todos los campos", Toast.LENGTH_SHORT).show()
             return
         }
 
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            Toast.makeText(this, "Email inválido", Toast.LENGTH_SHORT).show()
+        // Validar que tenga al menos 3 caracteres (para username o email)
+        if (emailOrUsername.length < 3) {
+            Toast.makeText(this, "El usuario o email es muy corto", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -72,25 +77,48 @@ class LoginActivity : AppCompatActivity() {
             return
         }
 
-        // 🔹 Mostrar progreso
-        progressBar.visibility = ProgressBar.VISIBLE
-        btnLogin.isEnabled = false
+        showLoading(true)
 
-        // 🔹 Simular inicio de sesión
-        simulateLogin(email)
+        // Iniciar sesión con Cognito (acepta email o username)
+        lifecycleScope.launch {
+            val result = cognitoAuth.signIn(emailOrUsername, password)
+
+            showLoading(false)
+
+            result.onSuccess {
+                // Obtener información del usuario
+                val userInfoResult = cognitoAuth.getCurrentUser()
+                userInfoResult.onSuccess { userInfo ->
+                    val name = userInfo["name"] ?: "Usuario"
+                    val email = userInfo["email"] ?: emailOrUsername
+                    storageHelper.saveUserData(name, email)
+                }
+
+                Toast.makeText(this@LoginActivity, "Inicio de sesión exitoso", Toast.LENGTH_SHORT).show()
+                navigateToMap()
+            }.onFailure { error ->
+                val errorMessage = when {
+                    error.message?.contains("UserNotFoundException") == true ->
+                        "Usuario o email no encontrado"
+                    error.message?.contains("NotAuthorizedException") == true ->
+                        "Contraseña incorrecta"
+                    error.message?.contains("UserNotConfirmedException") == true ->
+                        "Debes verificar tu email antes de iniciar sesión"
+                    else -> "Error: ${error.message}"
+                }
+
+                Toast.makeText(
+                    this@LoginActivity,
+                    errorMessage,
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
     }
 
-    private fun simulateLogin(email: String) {
-        Handler(Looper.getMainLooper()).postDelayed({
-            progressBar.visibility = ProgressBar.GONE
-            btnLogin.isEnabled = true
-
-            // 🔹 Guardar sesión del usuario
-            storageHelper.saveUserData("Usuario", email)
-
-            Toast.makeText(this, "Inicio de sesión exitoso", Toast.LENGTH_SHORT).show()
-            navigateToMap()
-        }, 2000)
+    private fun showLoading(show: Boolean) {
+        progressBar.visibility = if (show) View.VISIBLE else View.GONE
+        btnLogin.isEnabled = !show
     }
 
     private fun navigateToMap() {

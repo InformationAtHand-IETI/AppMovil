@@ -90,4 +90,13 @@ dependencies {
 
     // Material Design
     implementation("com.google.android.material:material:1.9.0")
+
+
+    // AWS Amplify
+    implementation("com.amplifyframework:aws-auth-cognito:2.14.5")
+    implementation("com.amplifyframework:core:2.14.5")
+
+    // Coroutines para operaciones asíncronas
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
 }

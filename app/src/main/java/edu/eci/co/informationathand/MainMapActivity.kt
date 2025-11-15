@@ -1,19 +1,19 @@
 package edu.eci.co.informationathand
 
-import android.widget.TextView
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.location.Location
+import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.widget.Button
-import android.widget.EditText
-import android.widget.Toast
+import android.view.View
+import android.widget.*
+import androidx.activity.addCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -24,17 +24,42 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import edu.eci.co.informationathand.utils.StorageHelper
-import android.view.Menu
-import android.view.MenuItem
 import java.text.SimpleDateFormat
 import java.util.*
 
-class MapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener {
+class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener {
 
     private lateinit var mMap: GoogleMap
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var storageHelper: StorageHelper
+
+    private lateinit var fabMap: FloatingActionButton
+    private lateinit var fragmentContainer: FrameLayout
+    private lateinit var mapFragment: SupportMapFragment
+
+    // Botones de navegación
+    private lateinit var navProfileBtn: LinearLayout
+    private lateinit var navChatBtn: LinearLayout
+    private lateinit var navAccidentsBtn: LinearLayout
+    private lateinit var navPlansBtn: LinearLayout
+
+    // Iconos y labels
+    private lateinit var iconProfile: ImageView
+    private lateinit var iconChat: ImageView
+    private lateinit var iconAccidents: ImageView
+    private lateinit var iconPlans: ImageView
+
+    private lateinit var labelProfile: TextView
+    private lateinit var labelChat: TextView
+    private lateinit var labelAccidents: TextView
+    private lateinit var labelPlans: TextView
+
+    private var isMapVisible = true
+    private var currentSelectedNav = "map"
+
+    private val allMarkers = mutableListOf<Marker>()
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
@@ -42,57 +67,186 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInfoWin
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_map)
+        setContentView(R.layout.activity_main_map_navigation)
 
-        // Inicializar StorageHelper y FusedLocationClient
         storageHelper = StorageHelper(this)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
-        val mapFragment = supportFragmentManager
-            .findFragmentById(R.id.map) as SupportMapFragment
+        // Views
+        fabMap = findViewById(R.id.fab_map)
+        fragmentContainer = findViewById(R.id.fragment_container)
+
+        // Nav buttons
+        navProfileBtn = findViewById(R.id.nav_profile_btn)
+        navChatBtn = findViewById(R.id.nav_chat_btn)
+        navAccidentsBtn = findViewById(R.id.nav_accidents_btn)
+        navPlansBtn = findViewById(R.id.nav_plans_btn)
+
+        // Icons
+        iconProfile = findViewById(R.id.icon_profile)
+        iconChat = findViewById(R.id.icon_chat)
+        iconAccidents = findViewById(R.id.icon_accidents)
+        iconPlans = findViewById(R.id.icon_plans)
+
+        // Labels
+        labelProfile = findViewById(R.id.label_profile)
+        labelChat = findViewById(R.id.label_chat)
+        labelAccidents = findViewById(R.id.label_accidents)
+        labelPlans = findViewById(R.id.label_plans)
+
+        // Mapa
+        mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+
+        // Navegación inferior
+        setupNavigation()
+
+        // FAB → siempre regresa al mapa
+        fabMap.setOnClickListener {
+            showMap()
+        }
+
+        // 🔥 NUEVO SISTEMA DE BOTÓN ATRÁS (reemplaza a onBackPressed())
+        onBackPressedDispatcher.addCallback(this) {
+            if (!isMapVisible) {
+                showMap()
+            } else {
+                finish()
+            }
+        }
+    }
+
+    private fun setupNavigation() {
+        navProfileBtn.setOnClickListener {
+            selectNavItem("profile")
+            showFragment(ProfileFragment())
+        }
+
+        navChatBtn.setOnClickListener {
+            selectNavItem("chat")
+            showFragment(ChatFragment())
+        }
+
+        navAccidentsBtn.setOnClickListener {
+            selectNavItem("accidents")
+            showFragment(AccidentsFragment())
+        }
+
+        navPlansBtn.setOnClickListener {
+            selectNavItem("plans")
+            showFragment(PlansFragment())
+        }
+
+        selectNavItem("map")
+    }
+
+    private fun selectNavItem(item: String) {
+        currentSelectedNav = item
+
+        val activeColor = Color.parseColor("#1A237E")
+        val inactiveColor = Color.parseColor("#9E9E9E")
+
+        // Reset all
+        iconProfile.setColorFilter(inactiveColor)
+        iconChat.setColorFilter(inactiveColor)
+        iconAccidents.setColorFilter(inactiveColor)
+        iconPlans.setColorFilter(inactiveColor)
+
+        labelProfile.setTextColor(inactiveColor)
+        labelChat.setTextColor(inactiveColor)
+        labelAccidents.setTextColor(inactiveColor)
+        labelPlans.setTextColor(inactiveColor)
+
+        when (item) {
+            "profile" -> {
+                iconProfile.setColorFilter(activeColor)
+                labelProfile.setTextColor(activeColor)
+            }
+            "chat" -> {
+                iconChat.setColorFilter(activeColor)
+                labelChat.setTextColor(activeColor)
+            }
+            "accidents" -> {
+                iconAccidents.setColorFilter(activeColor)
+                labelAccidents.setTextColor(activeColor)
+            }
+            "plans" -> {
+                iconPlans.setColorFilter(activeColor)
+                labelPlans.setTextColor(activeColor)
+            }
+        }
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
-
         mMap.uiSettings.isZoomControlsEnabled = true
         mMap.uiSettings.isMyLocationButtonEnabled = true
 
-        // Ubicación inicial (Bogotá)
         val bogota = LatLng(4.6097, -74.0817)
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(bogota, 11f))
 
-        // Habilitar ubicación del usuario
         enableMyLocation()
-
-        // Cargar reportes de ejemplo (los que tenías originalmente)
         loadSampleMarkers()
-
-        // Cargar reportes guardados del storage
         loadStoredReports()
 
-        // Click en ventana de información para ver detalles
         mMap.setOnInfoWindowClickListener(this)
 
-        // Click largo para crear nuevo reporte
         mMap.setOnMapLongClickListener { latLng ->
             showCreateReportDialog(latLng)
         }
 
-        // Click en botón de ubicación para crear reporte en ubicación actual
         mMap.setOnMyLocationButtonClickListener {
             createReportAtCurrentLocation()
             true
         }
+
+        // Manejo para centrar marcador desde fragmento
+        intent?.let { intentData ->
+            if (intentData.hasExtra("center_latitude")) {
+                val lat = intentData.getDoubleExtra("center_latitude", 0.0)
+                val lng = intentData.getDoubleExtra("center_longitude", 0.0)
+                val title = intentData.getStringExtra("marker_title") ?: "Ubicación"
+                val shouldZoom = intentData.getBooleanExtra("zoom_to_marker", false)
+
+                val location = LatLng(lat, lng)
+
+                if (shouldZoom) {
+                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(location, 17f))
+
+                    android.os.Handler().postDelayed({
+                        for (marker in allMarkers) {
+                            if (marker.position.latitude == lat && marker.position.longitude == lng) {
+                                marker.showInfoWindow()
+                                break
+                            }
+                        }
+                    }, 500)
+                }
+            }
+        }
+    }
+
+    private fun showMap() {
+        isMapVisible = true
+        fragmentContainer.visibility = View.GONE
+        mapFragment.view?.visibility = View.VISIBLE
+        selectNavItem("map")
+    }
+
+    private fun showFragment(fragment: Fragment) {
+        isMapVisible = false
+        mapFragment.view?.visibility = View.GONE
+        fragmentContainer.visibility = View.VISIBLE
+
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+            .commit()
     }
 
     private fun enableMyLocation() {
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED
         ) {
             mMap.isMyLocationEnabled = true
         } else {
@@ -105,7 +259,6 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInfoWin
     }
 
     private fun loadSampleMarkers() {
-        // Marcadores de ejemplo originales
         val markers = listOf(
             Triple(LatLng(4.6097, -74.0817), "Accidente leve", "Hora: 8:30 AM - Cll 72 con 15"),
             Triple(LatLng(4.6486, -74.1079), "Choque múltiple", "Hora: 9:10 AM - Av. Boyacá"),
@@ -127,6 +280,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInfoWin
                     .icon(BitmapDescriptorFactory.defaultMarker(colors[index]))
             )
             marker?.tag = "sample_$index"
+            if (marker != null) allMarkers.add(marker)
         }
     }
 
@@ -134,7 +288,6 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInfoWin
         val reports = storageHelper.getAllReports()
 
         reports.forEach { report ->
-            // Formatear fecha
             val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
             val fecha = sdf.format(Date(report.timestamp))
 
@@ -145,7 +298,9 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInfoWin
                     .snippet("${report.description}\n\n🕒 $fecha\n\n👆 Toca para ver detalles")
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN))
             )
+
             marker?.tag = "stored_${report.id}"
+            if (marker != null) allMarkers.add(marker)
         }
     }
 
@@ -161,8 +316,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInfoWin
 
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
             location?.let {
-                val latLng = LatLng(it.latitude, it.longitude)
-                showCreateReportDialog(latLng)
+                showCreateReportDialog(LatLng(it.latitude, it.longitude))
             } ?: run {
                 Toast.makeText(this, "No se pudo obtener la ubicación", Toast.LENGTH_SHORT).show()
             }
@@ -172,26 +326,10 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInfoWin
     private fun showCreateReportDialog(latLng: LatLng) {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_create_report, null)
 
-        val tvDireccion = dialogView.findViewById<TextView>(R.id.tvReportAddress)
         val etTitulo = dialogView.findViewById<EditText>(R.id.etReportTitle)
         val etDescripcion = dialogView.findViewById<EditText>(R.id.etReportDescription)
         val btnEnviar = dialogView.findViewById<Button>(R.id.btnSendReport)
         val btnCancelar = dialogView.findViewById<Button>(R.id.btnCancelReport)
-
-        // Obtener la dirección desde las coordenadas
-        val geocoder = android.location.Geocoder(this, Locale.getDefault())
-        try {
-            val direcciones = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
-            if (!direcciones.isNullOrEmpty()) {
-                val direccion = direcciones[0].getAddressLine(0)
-                tvDireccion.text = "📍 $direccion"
-            } else {
-                tvDireccion.text = "📍 Dirección no disponible"
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            tvDireccion.text = "📍 Error obteniendo dirección"
-        }
 
         val dialog = AlertDialog.Builder(this)
             .setView(dialogView)
@@ -201,7 +339,6 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInfoWin
         btnEnviar.setOnClickListener {
             val titulo = etTitulo.text.toString().trim()
             val descripcion = etDescripcion.text.toString().trim()
-            val direccionTexto = tvDireccion.text.toString()
 
             if (titulo.isEmpty()) {
                 etTitulo.error = "Ingresa un título"
@@ -215,26 +352,23 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInfoWin
                 return@setOnClickListener
             }
 
-            // Guardar el reporte junto con la dirección
-            saveReport(latLng, titulo, "$descripcion\n\n$direccionTexto")
+            saveReport(latLng, titulo, descripcion)
             dialog.dismiss()
         }
 
-        btnCancelar.setOnClickListener { dialog.dismiss() }
+        btnCancelar.setOnClickListener {
+            dialog.dismiss()
+        }
 
         dialog.show()
     }
 
-
     private fun saveReport(latLng: LatLng, title: String, description: String) {
-        // Guardar reporte en storage
         storageHelper.saveReport(latLng.latitude, latLng.longitude, title, description)
 
-        // Formatear fecha
         val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
         val fecha = sdf.format(Date())
 
-        // Agregar marcador al mapa con ícono de ubicación
         val marker = mMap.addMarker(
             MarkerOptions()
                 .position(latLng)
@@ -245,10 +379,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInfoWin
 
         Toast.makeText(this, "✅ Reporte guardado exitosamente", Toast.LENGTH_SHORT).show()
 
-        // Mostrar la ventana de información del nuevo marcador
         marker?.showInfoWindow()
-
-        // Animar cámara al nuevo marcador
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
     }
 
@@ -265,37 +396,15 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInfoWin
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            LOCATION_PERMISSION_REQUEST_CODE -> {
-                if (grantResults.isNotEmpty() &&
-                    grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    enableMyLocation()
-                } else {
-                    Toast.makeText(
-                        this,
-                        "Permiso de ubicación denegado",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-    }
 
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.map_menu, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_logout -> {
-                storageHelper.logout()
-                val intent = Intent(this, LoginActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                startActivity(intent)
-                true
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.isNotEmpty()
+                && grantResults[0] == PackageManager.PERMISSION_GRANTED
+            ) {
+                enableMyLocation()
+            } else {
+                Toast.makeText(this, "Permiso de ubicación denegado", Toast.LENGTH_SHORT).show()
             }
-            else -> super.onOptionsItemSelected(item)
         }
     }
 }

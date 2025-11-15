@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/nav_profile"
+        android:icon="@android:drawable/ic_menu_myplaces"
+        android:title="Perfil" />
+
+    <item
+        android:id="@+id/nav_chat"
+        android:icon="@android:drawable/ic_menu_send"
+        android:title="Chat" />
+
+    <!-- Espacio para el FAB central -->
+    <item
+        android:id="@+id/nav_placeholder"
+        android:enabled="false"
+        android:title="" />
+
+    <item
+        android:id="@+id/nav_accidents"
+        android:icon="@android:drawable/ic_menu_report_image"
+        android:title="Accidentes" />
+
+    <item
+        android:id="@+id/nav_plans"
+        android:icon="@android:drawable/ic_menu_preferences"
+        android:title="Planes" />
+
+</menu>

@@ -1,0 +1,22 @@
+<resources>
+
+    <!-- ESTILO CORRECTO PARA ShapeableImageView -->
+    <style name="TopCurveShape" parent="">
+        <item name="shapeAppearanceOverlay">
+            @style/TopCurveAppearance
+        </item>
+    </style>
+
+    <!-- APARIENCIA DE LA FORMA -->
+    <style name="TopCurveAppearance" parent="ShapeAppearance.Material3.LargeComponent">
+        <item name="cornerFamily">rounded</item>
+        <!-- Parte superior recta -->
+        <item name="cornerSizeTopLeft">0dp</item>
+        <item name="cornerSizeTopRight">0dp</item>
+
+        <!-- Parte inferior curva -->
+        <item name="cornerSizeBottomLeft">100dp</item>
+        <item name="cornerSizeBottomRight">100dp</item>
+    </style>
+
+</resources>

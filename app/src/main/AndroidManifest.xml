@@ -22,13 +22,13 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="API-KEY" />
+            android:value="AIzaSyA4Smxp0VFyjh0hJ1ePUx5B9i8ypdISyF0" />
 
 
         <activity
             android:name=".LoginActivity"
             android:exported="true"
-            android:label="Iniciar Sesión"
+            android:label="Parchesec"
             android:theme="@style/Theme.InformationAtHand">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -36,13 +36,11 @@
             </intent-filter>
         </activity>
 
-
         <activity
-            android:name=".MainActivity"
+            android:name=".MainMapActivity"
             android:exported="false"
-            android:label="@string/app_name"
+            android:label="Information At Hand"
             android:theme="@style/Theme.InformationAtHand" />
-
 
         <activity
             android:name=".RegisterActivity"
@@ -50,24 +48,16 @@
             android:label="Crear Cuenta"
             android:theme="@style/Theme.InformationAtHand" />
 
-
-        <activity
-            android:name=".MapActivity"
-            android:exported="false"
-            android:label="Mapa de Reportes"
-            android:theme="@style/Theme.InformationAtHand" />
-
-
         <activity
             android:name=".DetalleReporteActivity"
             android:exported="false"
             android:label="Detalle del Reporte"
-            android:parentActivityName=".MapActivity"
+            android:parentActivityName=".MainMapActivity"
             android:theme="@style/Theme.InformationAtHand">
             <!-- Navegación hacia atrás -->
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".MapActivity" />
+                android:value=".MainMapActivity" />
         </activity>
 
 

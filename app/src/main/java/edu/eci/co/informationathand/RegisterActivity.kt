@@ -36,13 +36,12 @@ class RegisterActivity : AppCompatActivity() {
         cognitoAuth = CognitoAuthHelper()
 
         // Inicializar vistas
-        etUsername = findViewById(R.id.etUsername)
         etName = findViewById(R.id.etName)
         etEmail = findViewById(R.id.etEmail)
         etPassword = findViewById(R.id.etPassword)
         btnRegister = findViewById(R.id.btnRegister)
         tvGoToLogin = findViewById(R.id.tvGoToLogin)
-        progressBar = findViewById(R.id.progressBar)
+
 
         btnRegister.setOnClickListener {
             registerUser()

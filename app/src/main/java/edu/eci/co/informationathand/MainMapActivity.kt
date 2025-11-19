@@ -1,5 +1,6 @@
 package edu.eci.co.informationathand
 
+import CommunityChatsFragment
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -124,7 +125,7 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
 
         navChatBtn.setOnClickListener {
             selectNavItem("chat")
-            showFragment(ChatFragment())
+            showFragment(CommunityChatsFragment())
         }
 
         navAccidentsBtn.setOnClickListener {

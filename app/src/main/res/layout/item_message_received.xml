@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="8dp">
+
+    <!-- Burbuja -->
+    <LinearLayout
+        android:id="@+id/bubbleReceived"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#E0E0E0"
+        android:padding="10dp"
+        android:elevation="2dp"
+        android:layout_marginEnd="40dp"
+        android:layout_marginRight="40dp"
+        android:layout_marginVertical="4dp"
+        android:backgroundTintMode="src_in"
+        android:backgroundTint="#E0E0E0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <!-- Texto del mensaje -->
+        <TextView
+            android:id="@+id/tvMessageText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hola, este es un mensaje recibido"
+            android:textSize="16sp"
+            android:textColor="#000000" />
+
+        <!-- Hora -->
+        <TextView
+            android:id="@+id/tvMessageTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="12:45 PM"
+            android:textSize="12sp"
+            android:textColor="#616161"
+            android:layout_gravity="end"
+            android:paddingTop="2dp" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

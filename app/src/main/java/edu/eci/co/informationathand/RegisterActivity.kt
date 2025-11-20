@@ -3,10 +3,8 @@ package edu.eci.co.informationathand
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.view.View
 import android.widget.Button
 import android.widget.EditText
-import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -24,7 +22,6 @@ class RegisterActivity : AppCompatActivity() {
     private lateinit var etPassword: EditText
     private lateinit var btnRegister: Button
     private lateinit var tvGoToLogin: TextView
-    private lateinit var progressBar: ProgressBar
     private lateinit var storageHelper: StorageHelper
     private lateinit var cognitoAuth: CognitoAuthHelper
 
@@ -37,6 +34,7 @@ class RegisterActivity : AppCompatActivity() {
 
         // Inicializar vistas
         etName = findViewById(R.id.etName)
+        etUsername = findViewById(R.id.etUsername)
         etEmail = findViewById(R.id.etEmail)
         etPassword = findViewById(R.id.etPassword)
         btnRegister = findViewById(R.id.btnRegister)
@@ -121,9 +119,11 @@ class RegisterActivity : AppCompatActivity() {
             )
 
             showLoading(false)
+            Log.d("RegisterActivity", "Resultado signUp = $result")
 
             result.onSuccess {
                 // Mostrar diálogo para código de verificación
+
                 showVerificationDialog(username, email)
             }.onFailure { error ->
                 Log.e("RegisterActivity", "Error en registro", error)
@@ -190,7 +190,6 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun showLoading(show: Boolean) {
-        progressBar.visibility = if (show) View.VISIBLE else View.GONE
         btnRegister.isEnabled = !show
     }
 }

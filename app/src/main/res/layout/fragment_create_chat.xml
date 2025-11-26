@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="20dp">
+
+    <!-- Título -->
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Crear Chat Comunitario"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:textColor="#1A237E"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <!-- Nombre del chat -->
+    <EditText
+        android:id="@+id/etChatName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="Nombre del chat"
+        android:inputType="text"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="24dp"/>
+
+    <!-- Zona de la ciudad -->
+    <EditText
+        android:id="@+id/etZone"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="Zona (Norte, Centro, Sur, etc.)"
+        android:inputType="text"
+        app:layout_constraintTop_toBottomOf="@id/etChatName"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"/>
+
+    <!-- Barrio -->
+    <EditText
+        android:id="@+id/etNeighborhood"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="Barrio"
+        android:inputType="text"
+        app:layout_constraintTop_toBottomOf="@id/etZone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"/>
+
+    <!-- Botón crear chat -->
+    <Button
+        android:id="@+id/btnCreateChat"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Crear Chat"
+        android:backgroundTint="#1A237E"
+        app:layout_constraintTop_toBottomOf="@id/etNeighborhood"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="24dp"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

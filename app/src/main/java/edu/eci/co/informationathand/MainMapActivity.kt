@@ -296,12 +296,15 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
         fragmentContainer.visibility = View.GONE
         mapFragment.view?.visibility = View.VISIBLE
         selectNavItem("map")
+        fabAddReport.visibility = View.VISIBLE  //
     }
 
     private fun showFragment(fragment: Fragment) {
         isMapVisible = false
         mapFragment.view?.visibility = View.GONE
         fragmentContainer.visibility = View.VISIBLE
+        fabAddReport.visibility = View.GONE  //
+
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)
             .commit()

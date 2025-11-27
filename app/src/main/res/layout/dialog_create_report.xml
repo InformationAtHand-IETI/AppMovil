@@ -1,80 +1,216 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:background="@android:drawable/dialog_holo_light_frame">
+    android:fillViewport="true">
 
-    <TextView
+    <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Nuevo Reporte"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        android:textColor="#000000"
-        android:gravity="center"
-        android:layout_marginBottom="20dp"/>
+        app:cardCornerRadius="20dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="#FFFFFF">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Tipo de Incidente (Obligatorio):"
-        android:textColor="#1A237E"
-        android:textStyle="bold"
-        android:layout_marginBottom="8dp"/>
-
-    <Spinner
-        android:id="@+id/spReportType"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:background="@android:drawable/btn_dropdown"
-        android:spinnerMode="dropdown"
-        android:layout_marginBottom="16dp"/>
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Descripción detallada:"
-        android:textColor="#1A237E"
-        android:textStyle="bold"
-        android:layout_marginBottom="8dp"/>
-
-    <EditText
-        android:id="@+id/etReportDescription"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Ej: Hay un accidente bloqueando el carril izquierdo..."
-        android:inputType="textCapSentences|textMultiLine"
-        android:minLines="3"
-        android:gravity="top|start"
-        android:background="@android:drawable/edit_text"
-        android:padding="12dp"
-        android:layout_marginBottom="24dp"/>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="end">
-
-        <Button
-            android:id="@+id/btnCancelReport"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Cancelar"
-            android:textColor="#757575"
-            android:background="@android:color/transparent"
-            android:layout_marginEnd="12dp"/>
+            android:orientation="vertical"
+            android:padding="24dp">
 
-        <Button
-            android:id="@+id/btnSendReport"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="ENVIAR REPORTE"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#D32F2F"/>
-    </LinearLayout>
+            <!-- Header con ícono -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_marginBottom="24dp">
 
-</LinearLayout>
+                <!-- Ícono circular -->
+                <FrameLayout
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:layout_marginBottom="12dp">
+
+                    <View
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:background="@drawable/circle_background_red"
+                        android:alpha="0.2" />
+
+                    <ImageView
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_gravity="center"
+                        android:src="@android:drawable/ic_dialog_alert"
+                        android:tint="#D32F2F" />
+                </FrameLayout>
+
+                <!-- Título -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Crear Nuevo Reporte"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:textColor="#1A237E"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="4dp" />
+
+                <!-- Subtítulo -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ayuda a tu comunidad reportando incidentes"
+                    android:textSize="13sp"
+                    android:textColor="#666666"
+                    android:gravity="center" />
+            </LinearLayout>
+
+            <!-- Tipo de Incidente -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Tipo de Incidente"
+                android:textColor="#1A237E"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp" />
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="#F5F5F5"
+                android:layout_marginBottom="20dp">
+
+                <Spinner
+                    android:id="@+id/spReportType"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:background="@android:color/transparent"
+                    android:spinnerMode="dropdown"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp" />
+            </androidx.cardview.widget.CardView>
+
+            <!-- Descripción -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Descripción Detallada *"
+                android:textColor="#1A237E"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Mínimo 10 caracteres, máximo 500"
+                android:textSize="11sp"
+                android:textColor="#999999"
+                android:layout_marginBottom="8dp" />
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="#F5F5F5"
+                android:layout_marginBottom="8dp">
+
+                <EditText
+                    android:id="@+id/etReportDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Ej: Accidente bloqueando el carril izquierdo en la Calle 72..."
+                    android:inputType="textCapSentences|textMultiLine"
+                    android:minLines="4"
+                    android:maxLines="6"
+                    android:gravity="top|start"
+                    android:background="@android:color/transparent"
+                    android:padding="16dp"
+                    android:textSize="14sp"
+                    android:textColor="#333333"
+                    android:textColorHint="#999999" />
+            </androidx.cardview.widget.CardView>
+
+            <!-- Contador de caracteres -->
+            <TextView
+                android:id="@+id/tvCharCount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="0 / 500 caracteres"
+                android:textSize="11sp"
+                android:textColor="#999999"
+                android:gravity="end"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Info adicional -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="#E3F2FD"
+                android:padding="12dp"
+                android:gravity="center_vertical"
+                app:cardCornerRadius="8dp"
+                android:layout_marginBottom="24dp">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@android:drawable/ic_dialog_info"
+                    android:tint="#1976D2"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Tu reporte será visible para toda la comunidad"
+                    android:textSize="12sp"
+                    android:textColor="#1976D2" />
+            </LinearLayout>
+
+            <!-- Botones -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="end">
+
+                <!-- Botón Cancelar -->
+                <Button
+                    android:id="@+id/btnCancelReport"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="Cancelar"
+                    android:textColor="#666666"
+                    android:textStyle="bold"
+                    android:textAllCaps="false"
+                    android:backgroundTint="@android:color/transparent"
+                    android:layout_marginEnd="8dp"
+                    style="@style/Widget.MaterialComponents.Button.TextButton" />
+
+                <!-- Botón Enviar -->
+                <Button
+                    android:id="@+id/btnSendReport"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="Enviar Reporte"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold"
+                    android:textAllCaps="false"
+                    android:backgroundTint="#D32F2F"
+                    android:paddingHorizontal="24dp"
+                    style="@style/Widget.MaterialComponents.Button" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+</ScrollView>

@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.*
@@ -15,6 +16,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -27,8 +29,63 @@ import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import edu.eci.co.informationathand.utils.StorageHelper
-import java.text.SimpleDateFormat
+import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.POST
 import java.util.*
+
+// --- SECCIÓN DE RED (RETROFIT) ---
+
+// 1. Modelo de Respuesta (Lo que recibimos de Azure)
+data class DenunciaResponse(
+    val id: String,
+    val nombreDenunciante: String,
+    val latitud: Double,
+    val longitud: Double,
+    val tipo: String,
+    val descripciones: List<String>,
+    val conteo: Int,
+    val estado: String,
+    val fechaCreacion: String?,
+    val fechaActualizacion: String?,
+    val fechaExpiracion: String?
+)
+
+// 2. Modelo de Petición (Lo que enviamos al crear)
+data class DenunciaRequest(
+    val nombreDenunciante: String,
+    val latitud: Double,
+    val longitud: Double,
+    val tipo: String,        // Debe ser GRAVE, LEVE, MEDIO, PROTESTA
+    val descripcion: String
+)
+
+// 3. Interfaz
+interface ApiService {
+    @GET("api/denuncias")
+    suspend fun obtenerDenuncias(): List<DenunciaResponse>
+
+    @POST("api/denuncias")
+    suspend fun crearDenuncia(@Body denuncia: DenunciaRequest): DenunciaResponse
+}
+
+// 4. Cliente Singleton
+object RetrofitClient {
+    private const val BASE_URL = "https://parchedenuncia-e8hyayg0fuavahc2.centralus-01.azurewebsites.net/"
+
+    val instance: ApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(ApiService::class.java)
+    }
+}
+// ---------------------------------
 
 class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener {
 
@@ -36,7 +93,10 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var storageHelper: StorageHelper
 
-    private lateinit var fabMap: FloatingActionButton
+    // Botones Flotantes
+    private lateinit var fabMap: FloatingActionButton        // Centrar
+    private lateinit var fabAddReport: FloatingActionButton  // Nuevo Reporte (Rojo)
+
     private lateinit var fragmentContainer: FrameLayout
     private lateinit var mapFragment: SupportMapFragment
 
@@ -73,8 +133,9 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
         storageHelper = StorageHelper(this)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
-        // Views
+        // Inicializar Views
         fabMap = findViewById(R.id.fab_map)
+        fabAddReport = findViewById(R.id.fab_add_report) // NUEVO BOTÓN
         fragmentContainer = findViewById(R.id.fragment_container)
 
         // Nav buttons
@@ -83,13 +144,11 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
         navAccidentsBtn = findViewById(R.id.nav_accidents_btn)
         navPlansBtn = findViewById(R.id.nav_plans_btn)
 
-        // Icons
+        // Icons y Labels
         iconProfile = findViewById(R.id.icon_profile)
         iconChat = findViewById(R.id.icon_chat)
         iconAccidents = findViewById(R.id.icon_accidents)
         iconPlans = findViewById(R.id.icon_plans)
-
-        // Labels
         labelProfile = findViewById(R.id.label_profile)
         labelChat = findViewById(R.id.label_chat)
         labelAccidents = findViewById(R.id.label_accidents)
@@ -102,18 +161,19 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
         // Navegación inferior
         setupNavigation()
 
-        // FAB → siempre regresa al mapa
+        // ACCIÓN BOTÓN CENTRAR MAPA
         fabMap.setOnClickListener {
             showMap()
         }
 
-        // 🔥 NUEVO SISTEMA DE BOTÓN ATRÁS (reemplaza a onBackPressed())
+        // ACCIÓN BOTÓN REPORTAR (ROJO)
+        fabAddReport.setOnClickListener {
+            createReportAtCurrentLocation()
+        }
+
+        // Sistema Back
         onBackPressedDispatcher.addCallback(this) {
-            if (!isMapVisible) {
-                showMap()
-            } else {
-                finish()
-            }
+            if (!isMapVisible) showMap() else finish()
         }
     }
 
@@ -122,65 +182,43 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
             selectNavItem("profile")
             showFragment(ProfileFragment())
         }
-
         navChatBtn.setOnClickListener {
             selectNavItem("chat")
             showFragment(CommunityChatsFragment())
         }
-
         navAccidentsBtn.setOnClickListener {
             selectNavItem("accidents")
             showFragment(AccidentsFragment())
         }
-
         navPlansBtn.setOnClickListener {
             selectNavItem("plans")
             showFragment(PlansFragment())
         }
-
         selectNavItem("map")
     }
 
     private fun selectNavItem(item: String) {
         currentSelectedNav = item
-
         val activeColor = Color.parseColor("#1A237E")
         val inactiveColor = Color.parseColor("#9E9E9E")
 
-        // Reset all
-        iconProfile.setColorFilter(inactiveColor)
-        iconChat.setColorFilter(inactiveColor)
-        iconAccidents.setColorFilter(inactiveColor)
-        iconPlans.setColorFilter(inactiveColor)
+        // Reset
+        iconProfile.setColorFilter(inactiveColor); labelProfile.setTextColor(inactiveColor)
+        iconChat.setColorFilter(inactiveColor); labelChat.setTextColor(inactiveColor)
+        iconAccidents.setColorFilter(inactiveColor); labelAccidents.setTextColor(inactiveColor)
+        iconPlans.setColorFilter(inactiveColor); labelPlans.setTextColor(inactiveColor)
 
-        labelProfile.setTextColor(inactiveColor)
-        labelChat.setTextColor(inactiveColor)
-        labelAccidents.setTextColor(inactiveColor)
-        labelPlans.setTextColor(inactiveColor)
-
+        // Active
         when (item) {
-            "profile" -> {
-                iconProfile.setColorFilter(activeColor)
-                labelProfile.setTextColor(activeColor)
-            }
-            "chat" -> {
-                iconChat.setColorFilter(activeColor)
-                labelChat.setTextColor(activeColor)
-            }
-            "accidents" -> {
-                iconAccidents.setColorFilter(activeColor)
-                labelAccidents.setTextColor(activeColor)
-            }
-            "plans" -> {
-                iconPlans.setColorFilter(activeColor)
-                labelPlans.setTextColor(activeColor)
-            }
+            "profile" -> { iconProfile.setColorFilter(activeColor); labelProfile.setTextColor(activeColor) }
+            "chat" -> { iconChat.setColorFilter(activeColor); labelChat.setTextColor(activeColor) }
+            "accidents" -> { iconAccidents.setColorFilter(activeColor); labelAccidents.setTextColor(activeColor) }
+            "plans" -> { iconPlans.setColorFilter(activeColor); labelPlans.setTextColor(activeColor) }
         }
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-
         mMap.uiSettings.isZoomControlsEnabled = true
         mMap.uiSettings.isMyLocationButtonEnabled = true
 
@@ -188,43 +226,68 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(bogota, 11f))
 
         enableMyLocation()
-        loadSampleMarkers()
-        loadStoredReports()
 
         mMap.setOnInfoWindowClickListener(this)
 
+        // Opción alternativa: Long Click para reportar manualmente en otro lado
         mMap.setOnMapLongClickListener { latLng ->
             showCreateReportDialog(latLng)
         }
 
-        mMap.setOnMyLocationButtonClickListener {
-            createReportAtCurrentLocation()
-            true
-        }
+        // Cargar datos al iniciar
+        loadReportsFromBackend()
+    }
 
-        // Manejo para centrar marcador desde fragmento
-        intent?.let { intentData ->
-            if (intentData.hasExtra("center_latitude")) {
-                val lat = intentData.getDoubleExtra("center_latitude", 0.0)
-                val lng = intentData.getDoubleExtra("center_longitude", 0.0)
-                val title = intentData.getStringExtra("marker_title") ?: "Ubicación"
-                val shouldZoom = intentData.getBooleanExtra("zoom_to_marker", false)
+    private fun loadReportsFromBackend() {
+        lifecycleScope.launch {
+            try {
+                val denuncias = RetrofitClient.instance.obtenerDenuncias()
 
-                val location = LatLng(lat, lng)
+                // --- ARREGLO 1: LIMPIAR EL MAPA ANTES DE PINTAR ---
+                mMap.clear()       // Borra los marcadores visuales viejos
+                allMarkers.clear() // Borra la lista de memoria
+                // --------------------------------------------------
 
-                if (shouldZoom) {
-                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(location, 17f))
+                denuncias.forEach { denuncia ->
+                    val colorIcono = obtenerColorPorTipo(denuncia.tipo)
 
-                    android.os.Handler().postDelayed({
-                        for (marker in allMarkers) {
-                            if (marker.position.latitude == lat && marker.position.longitude == lng) {
-                                marker.showInfoWindow()
-                                break
-                            }
-                        }
-                    }, 500)
+                    // Mostrar conteo si hay más de 1 reporte agrupado
+                    val tituloMarker = if(denuncia.conteo > 1) {
+                        "📍 ${denuncia.tipo} (+${denuncia.conteo})"
+                    } else {
+                        "📍 ${denuncia.tipo}"
+                    }
+
+                    val detalleTexto = if (denuncia.descripciones.isNotEmpty()) {
+                        denuncia.descripciones[0]
+                    } else {
+                        "Sin descripción"
+                    }
+
+                    val marker = mMap.addMarker(
+                        MarkerOptions()
+                            .position(LatLng(denuncia.latitud, denuncia.longitud))
+                            .title(tituloMarker)
+                            .snippet("$detalleTexto\n👆 Ver detalle completo")
+                            .icon(BitmapDescriptorFactory.defaultMarker(colorIcono))
+                    )
+                    marker?.tag = denuncia
+                    if (marker != null) allMarkers.add(marker)
                 }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
+        }
+    }
+
+    private fun obtenerColorPorTipo(tipo: String): Float {
+        return when (tipo.uppercase()) {
+            "GRAVE", "ACCIDENTE" -> BitmapDescriptorFactory.HUE_RED
+            "LEVE" -> BitmapDescriptorFactory.HUE_YELLOW
+            "CHOQUE", "MEDIO" -> BitmapDescriptorFactory.HUE_ORANGE
+            "PROTESTA" -> BitmapDescriptorFactory.HUE_VIOLET
+            else -> BitmapDescriptorFactory.HUE_CYAN
         }
     }
 
@@ -239,7 +302,6 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
         isMapVisible = false
         mapFragment.view?.visibility = View.GONE
         fragmentContainer.visibility = View.VISIBLE
-
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)
             .commit()
@@ -259,78 +321,38 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
         }
     }
 
-    private fun loadSampleMarkers() {
-        val markers = listOf(
-            Triple(LatLng(4.6097, -74.0817), "Accidente leve", "Hora: 8:30 AM - Cll 72 con 15"),
-            Triple(LatLng(4.6486, -74.1079), "Choque múltiple", "Hora: 9:10 AM - Av. Boyacá"),
-            Triple(LatLng(4.5981, -74.0760), "Vehículo varado", "Hora: 10:45 AM - Cll 26 con 7")
-        )
-
-        val colors = listOf(
-            BitmapDescriptorFactory.HUE_RED,
-            BitmapDescriptorFactory.HUE_ORANGE,
-            BitmapDescriptorFactory.HUE_YELLOW
-        )
-
-        markers.forEachIndexed { index, triple ->
-            val marker = mMap.addMarker(
-                MarkerOptions()
-                    .position(triple.first)
-                    .title(triple.second)
-                    .snippet("${triple.third}\n\n📍 Toca para ver más detalles")
-                    .icon(BitmapDescriptorFactory.defaultMarker(colors[index]))
-            )
-            marker?.tag = "sample_$index"
-            if (marker != null) allMarkers.add(marker)
-        }
-    }
-
-    private fun loadStoredReports() {
-        val reports = storageHelper.getAllReports()
-
-        reports.forEach { report ->
-            val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-            val fecha = sdf.format(Date(report.timestamp))
-
-            val marker = mMap.addMarker(
-                MarkerOptions()
-                    .position(LatLng(report.latitude, report.longitude))
-                    .title("📍 ${report.title}")
-                    .snippet("${report.description}\n\n🕒 $fecha\n\n👆 Toca para ver detalles")
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN))
-            )
-
-            marker?.tag = "stored_${report.id}"
-            if (marker != null) allMarkers.add(marker)
-        }
-    }
-
     private fun createReportAtCurrentLocation() {
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Toast.makeText(this, "Permiso de ubicación necesario", Toast.LENGTH_SHORT).show()
             return
         }
 
+        // Obtener ubicación GPS y abrir diálogo
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
             location?.let {
                 showCreateReportDialog(LatLng(it.latitude, it.longitude))
             } ?: run {
-                Toast.makeText(this, "No se pudo obtener la ubicación", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "No se pudo obtener ubicación GPS", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
+    // --- DIÁLOGO CON SPINNER PARA EVITAR ERROR 400 ---
+    // Reemplaza esta función completa en MainMapActivity.kt
     private fun showCreateReportDialog(latLng: LatLng) {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_create_report, null)
 
-        val etTitulo = dialogView.findViewById<EditText>(R.id.etReportTitle)
+        // Referencias
+        val spTipo = dialogView.findViewById<Spinner>(R.id.spReportType)
         val etDescripcion = dialogView.findViewById<EditText>(R.id.etReportDescription)
         val btnEnviar = dialogView.findViewById<Button>(R.id.btnSendReport)
         val btnCancelar = dialogView.findViewById<Button>(R.id.btnCancelReport)
+
+        // Llenar Spinner
+        val tiposValidos = listOf("GRAVE", "MEDIO", "LEVE", "PROTESTA")
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, tiposValidos)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spTipo.adapter = adapter
 
         val dialog = AlertDialog.Builder(this)
             .setView(dialogView)
@@ -338,22 +360,27 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
             .create()
 
         btnEnviar.setOnClickListener {
-            val titulo = etTitulo.text.toString().trim()
+            val tipoSeleccionado = spTipo.selectedItem.toString()
             val descripcion = etDescripcion.text.toString().trim()
 
-            if (titulo.isEmpty()) {
-                etTitulo.error = "Ingresa un título"
-                etTitulo.requestFocus()
+            // --- 🔍 VALIDACIÓN DE LONGITUD (10 a 500 caracteres) ---
+
+            if (descripcion.length < 10) {
+                etDescripcion.error = "Muy corta: Mínimo 10 caracteres."
+                etDescripcion.requestFocus() // Pone el cursor ahí para que escriban más
                 return@setOnClickListener
             }
 
-            if (descripcion.isEmpty()) {
-                etDescripcion.error = "Ingresa una descripción"
+            if (descripcion.length > 500) {
+                etDescripcion.error = "Muy larga: Máximo 500 caracteres."
                 etDescripcion.requestFocus()
                 return@setOnClickListener
             }
 
-            saveReport(latLng, titulo, descripcion)
+            // -------------------------------------------------------
+
+            // Si pasa la validación, enviamos:
+            saveReportToBackend(latLng, tipoSeleccionado, descripcion)
             dialog.dismiss()
         }
 
@@ -364,48 +391,67 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
         dialog.show()
     }
 
-    private fun saveReport(latLng: LatLng, title: String, description: String) {
-        storageHelper.saveReport(latLng.latitude, latLng.longitude, title, description)
+    private fun saveReportToBackend(latLng: LatLng, tipo: String, descripcion: String) {
+        Toast.makeText(this, "Enviando...", Toast.LENGTH_SHORT).show()
 
-        val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-        val fecha = sdf.format(Date())
+        lifecycleScope.launch {
+            try {
+                // 1. OBTENER EL NOMBRE REAL DEL USUARIO
+                // Tu StorageHelper devuelve String?, así que usamos el operador elvis (?:)
+                // para poner un valor por defecto si es nulo.
+                val nombreUsuario = storageHelper.getUserName() ?: "Usuario Anónimo"
 
-        val marker = mMap.addMarker(
-            MarkerOptions()
-                .position(latLng)
-                .title("📍 $title")
-                .snippet("$description\n\n🕒 $fecha\n\n👆 Toca para ver detalles")
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN))
-        )
+                val nuevoReporte = DenunciaRequest(
+                    nombreDenunciante = nombreUsuario, // <--- AQUÍ SE ENVÍA EL NOMBRE REAL
+                    latitud = latLng.latitude,
+                    longitud = latLng.longitude,
+                    tipo = tipo,
+                    descripcion = descripcion
+                )
 
-        Toast.makeText(this, "✅ Reporte guardado exitosamente", Toast.LENGTH_SHORT).show()
+                // 2. Enviar el reporte al Backend
+                RetrofitClient.instance.crearDenuncia(nuevoReporte)
 
-        marker?.showInfoWindow()
-        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
+                // 3. Éxito
+                Toast.makeText(this@MainMapActivity, "✅ Reporte enviado por $nombreUsuario", Toast.LENGTH_SHORT).show()
+
+                // Recargar mapa para ver el nuevo pin con la info actualizada
+                loadReportsFromBackend()
+
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
+
+            } catch (e: HttpException) {
+                val errorMsg = e.response()?.errorBody()?.string()
+                Log.e("API_ERROR", "Error: $errorMsg")
+                Toast.makeText(this@MainMapActivity, "Error al enviar reporte", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Toast.makeText(this@MainMapActivity, "Error de conexión", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     override fun onInfoWindowClick(marker: Marker) {
+        val denuncia = marker.tag as? DenunciaResponse
         val intent = Intent(this, DetalleReporteActivity::class.java)
-        intent.putExtra("titulo", marker.title)
-        intent.putExtra("detalle", marker.snippet)
+
+        if (denuncia != null) {
+            intent.putExtra("tipo", denuncia.tipo)
+            intent.putExtra("estado", denuncia.estado)
+            intent.putExtra("conteo", denuncia.conteo)
+            intent.putExtra("descripciones", denuncia.descripciones.joinToString("\n"))
+            intent.putExtra("fecha", denuncia.fechaCreacion)
+            intent.putExtra("autor", denuncia.nombreDenunciante)
+        } else {
+            intent.putExtra("tipo", marker.title)
+            intent.putExtra("descripciones", marker.snippet)
+        }
         startActivity(intent)
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-            if (grantResults.isNotEmpty()
-                && grantResults[0] == PackageManager.PERMISSION_GRANTED
-            ) {
-                enableMyLocation()
-            } else {
-                Toast.makeText(this, "Permiso de ubicación denegado", Toast.LENGTH_SHORT).show()
-            }
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            enableMyLocation()
         }
     }
 }

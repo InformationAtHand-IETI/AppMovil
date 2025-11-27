@@ -4,14 +4,17 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
+import edu.eci.co.informationathand.chat.model.ChatInfo
 import edu.eci.co.informationathand.databinding.ItemChatSearchBinding
 
-class ChatSearchListAdapter : RecyclerView.Adapter<ChatSearchListAdapter.ChatViewHolder>() {
+class ChatSearchListAdapter(
+    private val onJoinClick: (ChatInfo) -> Unit
+) : RecyclerView.Adapter<ChatSearchListAdapter.ChatViewHolder>() {
 
-    private var originalList: List<ChatSearch> = emptyList()
-    private var filteredList: List<ChatSearch> = emptyList()
+    private var originalList: List<ChatInfo> = emptyList()
+    private var filteredList: List<ChatInfo> = emptyList()
 
-    fun submitList(list: List<ChatSearch>) {
+    fun submitList(list: List<ChatInfo>) {
         originalList = list
         filteredList = list
         notifyDataSetChanged()
@@ -26,7 +29,7 @@ class ChatSearchListAdapter : RecyclerView.Adapter<ChatSearchListAdapter.ChatVie
             originalList.filter { chat ->
                 chat.name.lowercase().contains(search) ||
                         chat.zone.lowercase().contains(search) ||
-                        chat.neighborhood.lowercase().contains(search)
+                        (chat.neighborhood?.lowercase()?.contains(search) == true)
             }
         }
 
@@ -49,9 +52,12 @@ class ChatSearchListAdapter : RecyclerView.Adapter<ChatSearchListAdapter.ChatVie
     inner class ChatViewHolder(private val binding: ItemChatSearchBinding)
         : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(chat: ChatSearch) {
+        fun bind(chat: ChatInfo) {
             binding.tvChatName.text = chat.name
-            binding.tvChatInfo.text = "Zona ${chat.zone} | Barrio ${chat.neighborhood}"
+            binding.tvChatInfo.text = "Zona ${chat.zone} | Barrio ${chat.neighborhood ?: "N/A"}"
+            binding.btnJoin.setOnClickListener {
+                onJoinClick(chat)
+            }
         }
     }
 }

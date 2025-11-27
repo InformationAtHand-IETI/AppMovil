@@ -1,18 +1,22 @@
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.widget.Toast
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentActivity
+
 import androidx.recyclerview.widget.RecyclerView
-import edu.eci.co.informationathand.chat.ChatModel
-import edu.eci.co.informationathand.chat.CommunityChatFragment
+import edu.eci.co.informationathand.chat.model.GroupChat
+
 import edu.eci.co.informationathand.R
 import edu.eci.co.informationathand.databinding.ItemChatBinding
+import java.time.format.DateTimeFormatter
 
-class ChatsAdapter(private val originalList: List<ChatModel>, val fragmentActivity: FragmentActivity) :
+class ChatsAdapter(private val onChatClick: (GroupChat) -> Unit) :
     RecyclerView.Adapter<ChatsAdapter.ChatViewHolder>() {
 
-    private var filteredList = originalList.toMutableList()
+    private var chats: List<GroupChat> = emptyList()
+
+    fun submitList(list: List<GroupChat>) {
+        chats = list
+        notifyDataSetChanged()
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChatViewHolder {
         val binding = ItemChatBinding.inflate(
@@ -22,41 +26,23 @@ class ChatsAdapter(private val originalList: List<ChatModel>, val fragmentActivi
     }
 
     override fun onBindViewHolder(holder: ChatViewHolder, position: Int) {
-        holder.bind(filteredList[position])
+        holder.bind(chats[position])
     }
 
-    override fun getItemCount(): Int = filteredList.size
-
-    fun filter(text: String) {
-        filteredList = if (text.isEmpty()) {
-            originalList.toMutableList()
-        } else {
-            originalList.filter {
-                it.name.contains(text, ignoreCase = true)
-            }.toMutableList()
-        }
-        notifyDataSetChanged()
-    }
+    override fun getItemCount(): Int = chats.size
 
     inner class ChatViewHolder(private val binding: ItemChatBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(chat: ChatModel) {
+        fun bind(chat: GroupChat) {
             binding.tvChatName.text = chat.name
-            binding.tvLastMessage.text = chat.lastMessage
-            binding.tvMessageTime.text = chat.time
+            binding.tvLastMessage.text = chat.lastMessageInfo.content ?: "Chat Creado"
+            binding.tvMessageTime.text = chat.lastMessageInfo.sentAt ?: chat.createdAt
 
             // Evento de click
             binding.root.setOnClickListener {
-                Toast.makeText(binding.root.context, "Abriendo ${chat.name}", Toast.LENGTH_SHORT).show()
-                showFragment(CommunityChatFragment())
+                onChatClick(chat)
             }
         }
-    }
-
-    private fun showFragment(fragment: Fragment) {
-        fragmentActivity.supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, fragment)
-            .commit()
     }
 }

@@ -233,6 +233,7 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
         fragmentContainer.visibility = View.GONE
         mapFragment.view?.visibility = View.VISIBLE
         selectNavItem("map")
+        showBottomNav()
     }
 
     private fun showFragment(fragment: Fragment) {
@@ -322,6 +323,13 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
                 Toast.makeText(this, "No se pudo obtener la ubicación", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+    fun hideBottomNav() {
+        findViewById<View>(R.id.bottom_nav_container).visibility = View.GONE
+    }
+
+    fun showBottomNav() {
+        findViewById<View>(R.id.bottom_nav_container).visibility = View.VISIBLE
     }
 
     private fun showCreateReportDialog(latLng: LatLng) {

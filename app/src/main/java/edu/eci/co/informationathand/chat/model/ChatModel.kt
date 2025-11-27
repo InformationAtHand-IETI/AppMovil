@@ -1,4 +1,4 @@
-package edu.eci.co.informationathand.chat
+package edu.eci.co.informationathand.chat.model
 
 data class ChatModel(
     val name: String,

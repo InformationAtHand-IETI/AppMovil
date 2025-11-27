@@ -4,39 +4,63 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="20dp">
+    android:padding="12dp">
 
-    <!-- Título -->
-    <TextView
-        android:id="@+id/tvTitle"
-        android:layout_width="wrap_content"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/headerChat"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Crear Chat Comunitario"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:textColor="#1A237E"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <!-- Nombre del chat -->
+        <!-- Botón volver -->
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@drawable/ic_arrow_back"
+            app:tint="#1A237E"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <!-- Nombre del chat -->
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Crear Chat Comunitario"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="#1A237E"
+            app:layout_constraintStart_toEndOf="@id/btnBack"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="12dp"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
     <EditText
         android:id="@+id/etChatName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:hint="Nombre del chat"
         android:inputType="text"
-        app:layout_constraintTop_toBottomOf="@id/tvTitle"
+        app:layout_constraintTop_toBottomOf="@id/headerChat"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        android:textSize="20sp"
         android:layout_marginTop="24dp"/>
 
-    <!-- Zona de la ciudad -->
     <EditText
         android:id="@+id/etZone"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:hint="Zona (Norte, Centro, Sur, etc.)"
         android:inputType="text"
+        android:textSize="20sp"
         app:layout_constraintTop_toBottomOf="@id/etChatName"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -49,6 +73,7 @@
         android:layout_height="wrap_content"
         android:hint="Barrio"
         android:inputType="text"
+        android:textSize="20sp"
         app:layout_constraintTop_toBottomOf="@id/etZone"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

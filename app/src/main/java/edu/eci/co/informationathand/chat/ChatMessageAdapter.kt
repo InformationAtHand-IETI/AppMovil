@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
+import edu.eci.co.informationathand.chat.model.ChatMessage
 import edu.eci.co.informationathand.databinding.ItemMessageReceivedBinding
 import edu.eci.co.informationathand.databinding.ItemMessageSentBinding
 
@@ -16,7 +17,7 @@ class ChatMessageAdapter(private val messagesList: List<ChatMessage>) :
     }
 
     override fun getItemViewType(position: Int): Int {
-        return if (messages[position].isSent) TYPE_SENT else TYPE_RECEIVED
+        return if (messages[position].sentByMe) TYPE_SENT else TYPE_RECEIVED
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -51,11 +52,11 @@ class ChatMessageAdapter(private val messagesList: List<ChatMessage>) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(message: ChatMessage) {
-            binding.tvMessageText.text = message.message
-            binding.tvMessageTime.text = message.sent
+            binding.tvMessageText.text = message.content
+            binding.tvMessageTime.text = message.createdAt
 
             binding.root.setOnClickListener {
-                Toast.makeText(binding.root.context, "Abriendo ${message.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(binding.root.context, "Abriendo ${message.content}", Toast.LENGTH_SHORT).show()
 
             }
         }
@@ -65,13 +66,19 @@ class ChatMessageAdapter(private val messagesList: List<ChatMessage>) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(message: ChatMessage) {
-            binding.tvMessageText.text = message.message
-            binding.tvMessageTime.text = message.sent
+            binding.tvMessageText.text = message.content
+            binding.tvMessageTime.text = message.createdAt
 
             binding.root.setOnClickListener {
-                Toast.makeText(binding.root.context, "Abriendo ${message.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(binding.root.context, "Abriendo ${message.content}", Toast.LENGTH_SHORT).show()
 
             }
         }
+    }
+
+    fun updateMessages(newMessages: List<ChatMessage>) {
+        this.messages.clear()
+        this.messages.addAll(newMessages)
+        notifyDataSetChanged()
     }
 }

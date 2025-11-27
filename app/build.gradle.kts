@@ -21,6 +21,22 @@ android {
         manifestPlaceholders["appAuthRedirectScheme"] = "msauth"
     }
 
+    // ⭐ Configuración del keystore compartido
+    signingConfigs {
+        create("release") {
+            storeFile = file("../informationathand.keystore")
+            storePassword = "InfoAtHand2024"
+            keyAlias = "informationathand"
+            keyPassword = "InfoAtHand2024"
+        }
+        getByName("debug") {
+            storeFile = file("../informationathand.keystore")
+            storePassword = "InfoAtHand2024"
+            keyAlias = "informationathand"
+            keyPassword = "InfoAtHand2024"
+        }
+    }
+
     buildFeatures {
         viewBinding = true
         compose = true
@@ -32,11 +48,15 @@ android {
 
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 

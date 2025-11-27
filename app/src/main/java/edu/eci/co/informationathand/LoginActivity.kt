@@ -9,117 +9,133 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
-import edu.eci.co.informationathand.utils.CognitoAuthHelper
+import com.microsoft.identity.client.*
+import com.microsoft.identity.client.exception.MsalException
 import edu.eci.co.informationathand.utils.StorageHelper
-import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
 
-    private lateinit var etEmailOrUsername: EditText
-    private lateinit var etPassword: EditText
     private lateinit var btnLogin: Button
-    private lateinit var tvRegister: TextView
     private lateinit var progressBar: ProgressBar
+    private lateinit var tvRegister: TextView
+
+    private lateinit var mSingleAccountApp: ISingleAccountPublicClientApplication
     private lateinit var storageHelper: StorageHelper
-    private lateinit var cognitoAuth: CognitoAuthHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
         storageHelper = StorageHelper(this)
-        cognitoAuth = CognitoAuthHelper()
 
-        // Verificar sesión existente
-        lifecycleScope.launch {
-            if (cognitoAuth.isUserSignedIn()) {
-                navigateToMap()
-                return@launch
-            }
-        }
-
-        // Inicializar vistas
-        etEmailOrUsername = findViewById(R.id.etEmail)
-        etPassword = findViewById(R.id.etPassword)
         btnLogin = findViewById(R.id.btnLogin)
-        tvRegister = findViewById(R.id.tvRegister)
         progressBar = findViewById(R.id.progressBar)
+        tvRegister = findViewById(R.id.tvRegister)
+
+
+        PublicClientApplication.createSingleAccountPublicClientApplication(
+            this,
+            R.raw.auth_config_single_account,
+            object : IPublicClientApplication.ISingleAccountApplicationCreatedListener {
+
+                override fun onCreated(application: ISingleAccountPublicClientApplication) {
+                    mSingleAccountApp = application
+                    loadAccount()
+                }
+
+                override fun onError(exception: MsalException?) {
+                    Toast.makeText(
+                        this@LoginActivity,
+                        "Error al inicializar MSAL: ${exception?.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        )
 
         btnLogin.setOnClickListener {
-            attemptLogin()
+            signIn()
         }
 
         tvRegister.setOnClickListener {
-            val intent = Intent(this, RegisterActivity::class.java)
-            startActivity(intent)
+            Toast.makeText(this, "Registro no aplica con MSAL", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun attemptLogin() {
-        val emailOrUsername = etEmailOrUsername.text.toString().trim()
-        val password = etPassword.text.toString().trim()
+    // -----------------------------------------
+    //   Cargar la cuenta si ya hay sesión
+    // -----------------------------------------
+    private fun loadAccount() {
+        mSingleAccountApp.getCurrentAccountAsync(object :
+            ISingleAccountPublicClientApplication.CurrentAccountCallback {
 
-        // Validaciones básicas
-        if (emailOrUsername.isEmpty() || password.isEmpty()) {
-            Toast.makeText(this, "Por favor completa todos los campos", Toast.LENGTH_SHORT).show()
-            return
-        }
+            override fun onAccountLoaded(activeAccount: IAccount?) {
+                if (activeAccount != null) {
+                    val name = activeAccount.username ?: "Usuario"
+                    val email = activeAccount.claims?.get("preferred_username")?.toString() ?: name
 
-        // Validar que tenga al menos 3 caracteres (para username o email)
-        if (emailOrUsername.length < 3) {
-            Toast.makeText(this, "El usuario o email es muy corto", Toast.LENGTH_SHORT).show()
-            return
-        }
+                    storageHelper.saveUserData(name, email)
+                    navigateToMap()
+                }
+            }
 
-        if (password.length < 6) {
-            Toast.makeText(this, "La contraseña debe tener al menos 6 caracteres", Toast.LENGTH_SHORT).show()
-            return
-        }
+            override fun onAccountChanged(priorAccount: IAccount?, currentAccount: IAccount?) {}
 
+            override fun onError(exception: MsalException) {
+                Toast.makeText(this@LoginActivity, "Error: ${exception?.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    // -----------------------------------------
+    //   Sign-in interactivo con MSAL
+    // -----------------------------------------
+    private fun signIn() {
         showLoading(true)
 
-        // Iniciar sesión con Cognito (acepta email o username)
-        lifecycleScope.launch {
-            val result = cognitoAuth.signIn(emailOrUsername, password)
+        mSingleAccountApp.signIn(
+            this,
+            null,
+            arrayOf("User.Read"),
+            object : AuthenticationCallback {
 
-            showLoading(false)
+                override fun onSuccess(result: IAuthenticationResult) {
+                    val account = result.account
 
-            result.onSuccess {
-                // Obtener información del usuario
-                val userInfoResult = cognitoAuth.getCurrentUser()
-                userInfoResult.onSuccess { userInfo ->
-                    val name = userInfo["name"] ?: "Usuario"
-                    val email = userInfo["email"] ?: emailOrUsername
+                    val name = account.username
+                    val email = result.account.claims?.get("preferred_username")?.toString() ?: name
+
                     storageHelper.saveUserData(name, email)
+
+                    showLoading(false)
+                    Toast.makeText(this@LoginActivity, "Inicio de sesión exitoso", Toast.LENGTH_SHORT).show()
+
+                    navigateToMap()
                 }
 
-                Toast.makeText(this@LoginActivity, "Inicio de sesión exitoso", Toast.LENGTH_SHORT).show()
-                navigateToMap()
-            }.onFailure { error ->
-                val errorMessage = when {
-                    error.message?.contains("UserNotFoundException") == true ->
-                        "Usuario o email no encontrado"
-                    error.message?.contains("NotAuthorizedException") == true ->
-                        "Contraseña incorrecta"
-                    error.message?.contains("UserNotConfirmedException") == true ->
-                        "Debes verificar tu email antes de iniciar sesión"
-                    else -> "Error: ${error.message}"
+                override fun onError(exception: MsalException) {
+                    showLoading(false)
+                    Toast.makeText(
+                        this@LoginActivity,
+                        "Error: ${exception.message}",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
 
-                Toast.makeText(
-                    this@LoginActivity,
-                    errorMessage,
-                    Toast.LENGTH_LONG
-                ).show()
+                override fun onCancel() {
+                    showLoading(false)
+                    Toast.makeText(this@LoginActivity, "Inicio cancelado", Toast.LENGTH_SHORT).show()
+                }
             }
-        }
+        )
     }
+
 
     private fun showLoading(show: Boolean) {
         progressBar.visibility = if (show) View.VISIBLE else View.GONE
         btnLogin.isEnabled = !show
     }
+
 
     private fun navigateToMap() {
         val intent = Intent(this, MainMapActivity::class.java)

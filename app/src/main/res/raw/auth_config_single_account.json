@@ -1,0 +1,16 @@
+{
+  "client_id": "f1198c3a-0ef6-4210-8727-4fc4028537af",
+  "authorization_user_agent": "DEFAULT",
+  "redirect_uri": "msauth://edu.eci.co.informationathand/0lI6YCygBKrdovx%2FmzZha4XU3AU%3D",
+  "broker_redirect_uri_registered": true,
+  "account_mode": "SINGLE",
+  "authorities": [
+    {
+      "type": "AAD",
+      "audience": {
+        "type": "AzureADandPersonalMicrosoftAccount",
+        "tenant_id": "common"
+      }
+    }
+  ]
+}

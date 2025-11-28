@@ -89,7 +89,6 @@ class MsalAuthManager(
         val account = app.currentAccount?.currentAccount
             ?: return onError(IllegalStateException("No active account"))
 
-        println(app.configuration.defaultAuthority.authorityURL.toString())
         app.acquireTokenSilentAsync(
             scopes,
             app.currentAccount?.currentAccount?.authority ?: "",
@@ -97,7 +96,6 @@ class MsalAuthManager(
 
                 override fun onSuccess(result: IAuthenticationResult) {
                     val jwt = result.accessToken   // <--- Aquí está el JWT
-                    println("Jwt: " + jwt)
                     onSuccess(jwt)
                 }
 

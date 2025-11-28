@@ -41,7 +41,6 @@ class CommunityChatsViewModel(application: Application) : AndroidViewModel(appli
 
     fun refreshChats() {
         if (currentPage > 0) return
-        println("sssddddd")
         loadMoreChats()
     }
 

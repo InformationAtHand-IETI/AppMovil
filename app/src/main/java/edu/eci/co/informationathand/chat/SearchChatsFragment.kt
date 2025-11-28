@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.widget.addTextChangedListener
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -90,19 +91,27 @@ class SearchChatsFragment : Fragment() {
             // Show loading state if needed
         }
 
-        viewModel.joinChatResult.observe(viewLifecycleOwner) { result ->
-            result.onSuccess {
-                android.widget.Toast.makeText(requireContext(), "Unido al grupo exitosamente", android.widget.Toast.LENGTH_SHORT).show()
-                // Navigate to CommunityChatsFragment
-                val fragment = CommunityChatsFragment()
-                requireActivity().supportFragmentManager.beginTransaction()
-                    .replace(R.id.fragment_container, fragment)
-                    .addToBackStack(null)
-                    .commit()
-            }.onFailure {
-                println(result.exceptionOrNull()?.message)
-                android.widget.Toast.makeText(requireContext(), "Error al unirse al grupo. " + result.exceptionOrNull()?.message, android.widget.Toast.LENGTH_SHORT).show()
+        viewModel.joinChatResult.observe(viewLifecycleOwner) { event ->
+            event?.getContentIfNotHandled()?.let { result ->
+                result.onSuccess {
+                    Toast.makeText(requireContext(), "Unido al grupo exitosamente", Toast.LENGTH_SHORT).show()
+
+                    val fragment = CommunityChatsFragment()
+                    requireActivity().supportFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit()
+                }
+
+                result.onFailure {
+                    Toast.makeText(
+                        requireContext(),
+                        "Error al unirse al grupo: ${it.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
+
     }
 }

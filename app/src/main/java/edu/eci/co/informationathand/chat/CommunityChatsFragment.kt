@@ -89,7 +89,6 @@ class CommunityChatsFragment : Fragment() {
 
 
         setupObservers()
-        viewModel.refreshChats()
 
         binding.etSearchChats.setOnEditorActionListener { v, actionId, event ->
             if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH ||

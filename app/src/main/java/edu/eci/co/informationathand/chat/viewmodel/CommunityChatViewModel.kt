@@ -4,12 +4,14 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import edu.eci.co.informationathand.chat.model.ChatMessage
 import edu.eci.co.informationathand.chat.repository.ChatRepository
 import kotlinx.coroutines.launch
 
-class CommunityChatViewModel(application: Application) : AndroidViewModel(application) {
+class CommunityChatViewModel(application: Application, private val chatId: String) : ViewModel() {
 
     private val repository = ChatRepository(application)
 
@@ -22,6 +24,14 @@ class CommunityChatViewModel(application: Application) : AndroidViewModel(applic
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
+    init {
+        repository.init(
+            onReady = {
+                loadMessages(chatId)
+            },
+            onError = { println(it.message) }
+        )
+    }
     // Cache
     private val messagesCache = HashMap<String, MutableList<ChatMessage>>()
     private val pageCache = HashMap<String, Int>()
@@ -41,7 +51,6 @@ class CommunityChatViewModel(application: Application) : AndroidViewModel(applic
         val isLastPage = isLastPageCache[groupId] ?: false
 
         if (isLastPage || _isLoading.value == true) return
-
         _isLoading.value = true
         _error.value = null
         viewModelScope.launch {
@@ -73,5 +82,18 @@ class CommunityChatViewModel(application: Application) : AndroidViewModel(applic
                 _isLoading.value = false
             }
         }
+    }
+}
+
+class CommunityChatViewModelFactory(
+    private val application: Application,
+    private val chatId: String
+) : ViewModelProvider.Factory {
+
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(CommunityChatViewModel::class.java)) {
+            return CommunityChatViewModel(application ,chatId) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

@@ -2,19 +2,34 @@ package edu.eci.co.informationathand.chat.repository
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.widget.Toast
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import edu.eci.co.informationathand.MsalAuthManager
+import edu.eci.co.informationathand.R
 import edu.eci.co.informationathand.chat.model.ChatInfo
 import edu.eci.co.informationathand.chat.model.ChatMessage
 import edu.eci.co.informationathand.chat.model.CreateChatRequest
 import edu.eci.co.informationathand.chat.model.GroupChat
 import edu.eci.co.informationathand.chat.model.PagedResponse
+import edu.eci.co.informationathand.chat.network.ChatApiService
 import edu.eci.co.informationathand.chat.network.RetrofitClient
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
 class ChatRepository(private val context: Context) {
-    private val api = RetrofitClient.api
+    private lateinit var api: ChatApiService
+    private var msalAuthManager: MsalAuthManager = MsalAuthManager(context, R.raw.auth_config_single_account)
+
+    fun init(onReady: () -> Unit, onError: (Exception) -> Unit) {
+        msalAuthManager.initialize(
+            onReady = {
+                api = RetrofitClient.create(msalAuthManager)
+                onReady()
+            },
+            onError = { ex -> onError(ex) }
+        )
+    }
 
     suspend fun getUserChats(page: Int = 0, size: Int = 10): PagedResponse<GroupChat> = api.getUserChats(page, size)
     suspend fun searchUserChats(search: String, page: Int = 0, size: Int = 10): PagedResponse<GroupChat> =

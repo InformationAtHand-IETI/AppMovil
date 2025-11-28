@@ -96,7 +96,7 @@ class LoginActivity : AppCompatActivity() {
         mSingleAccountApp.signIn(
             this,
             null,
-            arrayOf("User.Read"),
+            arrayOf("api://0300e252-00d2-41b3-be40-b72268b73d60/access_as_user"),
             object : AuthenticationCallback {
 
                 override fun onSuccess(result: IAuthenticationResult) {
@@ -115,6 +115,7 @@ class LoginActivity : AppCompatActivity() {
 
                 override fun onError(exception: MsalException) {
                     showLoading(false)
+                    println(exception.message)
                     Toast.makeText(
                         this@LoginActivity,
                         "Error: ${exception.message}",

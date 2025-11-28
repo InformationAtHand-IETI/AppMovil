@@ -8,8 +8,11 @@ import android.view.ViewGroup
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import edu.eci.co.informationathand.MainMapActivity
 import edu.eci.co.informationathand.R
+import edu.eci.co.informationathand.chat.viewmodel.CommunityChatViewModel
+import edu.eci.co.informationathand.chat.viewmodel.CommunityChatViewModelFactory
 import edu.eci.co.informationathand.databinding.FragmentChatOpenBinding
 
 class CommunityChatFragment(): Fragment(){
@@ -45,7 +48,7 @@ class CommunityChatFragment(): Fragment(){
         
         binding.tvChatTitle.text = chatName
         
-        val viewModel = androidx.lifecycle.ViewModelProvider(requireActivity())[edu.eci.co.informationathand.chat.viewmodel.CommunityChatViewModel::class.java]
+        val viewModel = ViewModelProvider(requireActivity(), CommunityChatViewModelFactory(requireActivity().application, chatId))[CommunityChatViewModel::class.java]
         
         adapter = ChatMessageAdapter(emptyList())
         val layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
@@ -64,7 +67,6 @@ class CommunityChatFragment(): Fragment(){
                  binding.messagesRecyclerView.scrollToPosition(newItemsCount)
              }
         }
-        
         binding.messagesRecyclerView.addOnScrollListener(object : androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: androidx.recyclerview.widget.RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)

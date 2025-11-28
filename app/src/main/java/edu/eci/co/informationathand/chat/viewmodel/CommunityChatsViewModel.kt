@@ -31,7 +31,12 @@ class CommunityChatsViewModel(application: Application) : AndroidViewModel(appli
     private var isLastPage = false
 
     init {
-        refreshChats()
+        repository.init(
+            onReady = {
+                refreshChats()
+            },
+            onError = { println(it.message) }
+        )
     }
 
     fun refreshChats() {
@@ -141,8 +146,9 @@ class CommunityChatsViewModel(application: Application) : AndroidViewModel(appli
     }
 
     // Join Logic
-    private val _joinChatResult = MutableLiveData<Result<GroupChat>>()
-    val joinChatResult: LiveData<Result<GroupChat>> = _joinChatResult
+    private val _joinChatResult = MutableLiveData<Event<Result<GroupChat>>>()
+    val joinChatResult: LiveData<Event<Result<GroupChat>>> = _joinChatResult
+
 
     fun joinChat(chatId: String) {
         _isLoading.value = true
@@ -154,10 +160,10 @@ class CommunityChatsViewModel(application: Application) : AndroidViewModel(appli
                 currentList.add(0, groupChat)
                 _chats.value = currentList
                 
-                _joinChatResult.value = Result.success(groupChat)
+                _joinChatResult.value = Event(Result.success(groupChat))
             } catch (e: Exception) {
                 val errorMessage = parseErrorMessage(e)
-                _joinChatResult.value = Result.failure(Exception(errorMessage))
+                _joinChatResult.value = Event(Result.failure(Exception(errorMessage)))
                 _error.value = errorMessage
             } finally {
                 _isLoading.value = false
@@ -165,6 +171,9 @@ class CommunityChatsViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
+    fun clearChatJoinResult(){
+        _joinChatResult.value = null
+    }
     private fun parseErrorMessage(e: Exception): String {
         return if (e is retrofit2.HttpException) {
             try {
@@ -229,4 +238,14 @@ class CommunityChatsViewModel(application: Application) : AndroidViewModel(appli
             }
         }
     }
+    class Event<out T>(private val content: T) {
+        private var hasBeenHandled = false
+
+        fun getContentIfNotHandled(): T? =
+            if (hasBeenHandled) null else {
+                hasBeenHandled = true
+                content
+            }
+    }
+
 }

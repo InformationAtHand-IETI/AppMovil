@@ -1,4 +1,4 @@
-package edu.eci.co.informationathand.chat
+package edu.eci.co.informationathand.chat.adapter
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -7,6 +7,8 @@ import androidx.recyclerview.widget.RecyclerView
 import edu.eci.co.informationathand.chat.model.ChatMessage
 import edu.eci.co.informationathand.databinding.ItemMessageReceivedBinding
 import edu.eci.co.informationathand.databinding.ItemMessageSentBinding
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class ChatMessageAdapter(private val messagesList: List<ChatMessage>) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>(){
@@ -53,8 +55,11 @@ class ChatMessageAdapter(private val messagesList: List<ChatMessage>) :
 
         fun bind(message: ChatMessage) {
             binding.tvMessageText.text = message.content
-            binding.tvMessageTime.text = message.createdAt
-
+            val parsed = LocalDateTime.parse(message.createdAt)
+            val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+            val formatted = parsed.format(formatter)
+            binding.tvMessageTime.text = formatted
+            binding.tvSenderName.text = message.senderName
             binding.root.setOnClickListener {
                 Toast.makeText(binding.root.context, "Abriendo ${message.content}", Toast.LENGTH_SHORT).show()
 
@@ -67,10 +72,13 @@ class ChatMessageAdapter(private val messagesList: List<ChatMessage>) :
 
         fun bind(message: ChatMessage) {
             binding.tvMessageText.text = message.content
-            binding.tvMessageTime.text = message.createdAt
+            val parsed = LocalDateTime.parse(message.createdAt)
+            val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+            val formatted = parsed.format(formatter)
+            binding.tvMessageTime.text = formatted
 
             binding.root.setOnClickListener {
-                Toast.makeText(binding.root.context, "Abriendo ${message.content}", Toast.LENGTH_SHORT).show()
+                //Toast.makeText(binding.root.context, "Abriendo ${message.content}", Toast.LENGTH_SHORT).show()
 
             }
         }

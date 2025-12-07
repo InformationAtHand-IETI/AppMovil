@@ -4,8 +4,8 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import edu.eci.co.informationathand.chat.model.GroupChat
 
-import edu.eci.co.informationathand.R
 import edu.eci.co.informationathand.databinding.ItemChatBinding
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class ChatsAdapter(private val onChatClick: (GroupChat) -> Unit) :
@@ -37,7 +37,11 @@ class ChatsAdapter(private val onChatClick: (GroupChat) -> Unit) :
         fun bind(chat: GroupChat) {
             binding.tvChatName.text = chat.name
             binding.tvLastMessage.text = chat.lastMessageInfo.content ?: "Chat Creado"
-            binding.tvMessageTime.text = chat.lastMessageInfo.sentAt ?: chat.createdAt
+            println(chat.name + " " + (chat.lastMessageInfo.sentAt ?: chat.createdAt))
+            val parsed = LocalDateTime.parse(chat.lastMessageInfo.sentAt ?: chat.createdAt)
+            val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+            val formatted = parsed.format(formatter)
+            binding.tvMessageTime.text = formatted
 
             // Evento de click
             binding.root.setOnClickListener {

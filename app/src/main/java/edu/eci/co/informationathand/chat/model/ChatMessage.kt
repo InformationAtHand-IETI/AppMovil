@@ -6,5 +6,6 @@ data class ChatMessage (
     val createdAt: String,
     val senderName: String,
     val sentByMe: Boolean,
-    val userId: String
+    val userId: String,
+    val groupId: String
 )

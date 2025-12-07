@@ -86,24 +86,37 @@ class MsalAuthManager(
         val app = singleAccountApp
             ?: return onError(IllegalStateException("MSAL not initialized"))
 
-        val account = app.currentAccount?.currentAccount
-            ?: return onError(IllegalStateException("No active account"))
-
-        app.acquireTokenSilentAsync(
-            scopes,
-            app.currentAccount?.currentAccount?.authority ?: "",
-            object : SilentAuthenticationCallback {
-
-                override fun onSuccess(result: IAuthenticationResult) {
-                    val jwt = result.accessToken   // <--- Aquí está el JWT
-                    onSuccess(jwt)
+        app.getCurrentAccountAsync(object : ISingleAccountPublicClientApplication.CurrentAccountCallback {
+            override fun onAccountLoaded(activeAccount: IAccount?) {
+                if (activeAccount == null) {
+                    onError(IllegalStateException("No active account"))
+                    return
                 }
 
-                override fun onError(exception: MsalException) {
-                    onError(exception)
-                }
+                app.acquireTokenSilentAsync(
+                    scopes,
+                    activeAccount.authority,
+                    object : SilentAuthenticationCallback {
+
+                        override fun onSuccess(result: IAuthenticationResult) {
+                            val jwt = result.accessToken
+                            println("Jwttttttttttttttttttttttttttttt" + jwt)
+                            onSuccess(jwt)
+                        }
+
+                        override fun onError(exception: MsalException) {
+                            onError(exception)
+                        }
+                    }
+                )
             }
-        )
+
+            override fun onAccountChanged(priorAccount: IAccount?, currentAccount: IAccount?) {}
+
+            override fun onError(exception: MsalException) {
+                onError(exception)
+            }
+        })
     }
 
 }

@@ -6,10 +6,13 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
+import edu.eci.co.informationathand.MsalAuthManager
+import edu.eci.co.informationathand.R
 import edu.eci.co.informationathand.chat.model.ChatInfo
 import edu.eci.co.informationathand.chat.model.ErrorResponse
 import edu.eci.co.informationathand.chat.model.GroupChat
 import edu.eci.co.informationathand.chat.model.LastMessage
+import edu.eci.co.informationathand.chat.network.WebSocketManager
 import edu.eci.co.informationathand.chat.repository.ChatRepository
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -37,6 +40,59 @@ class CommunityChatsViewModel(application: Application) : AndroidViewModel(appli
             },
             onError = { println(it.message) }
         )
+        connectWebSocket()
+        observeWebSocketMessages()
+    }
+
+    private fun connectWebSocket() {
+        val msalAuthManager = MsalAuthManager(
+            getApplication(),
+            R.raw.auth_config_single_account
+        )
+
+        msalAuthManager.initialize(
+            onReady = {
+                msalAuthManager.getJwt(
+                    onSuccess = { token ->
+                        WebSocketManager.connect(token)
+                    },
+                    onError = { e ->
+                        println("Error getting JWT for WebSocket: ${e.message}")
+                    }
+                )
+            },
+            onError = { e ->
+                println("Error initializing MSAL for WebSocket: ${e.message}")
+            }
+        )
+    }
+
+    private fun observeWebSocketMessages() {
+        viewModelScope.launch {
+            WebSocketManager.messageFlow.collect { message ->
+                updateChatWithNewMessage(message)
+            }
+        }
+    }
+
+    private fun updateChatWithNewMessage(message: edu.eci.co.informationathand.chat.model.ChatMessage) {
+        val chatId = message.groupId
+        val currentList = _chats.value.orEmpty().toMutableList()
+        val chatIndex = currentList.indexOfFirst { it.id == chatId }
+
+        if (chatIndex != -1) {
+            val chat = currentList[chatIndex]
+            val updatedChat = chat.copy(
+                lastMessageInfo = LastMessage(message.content, message.createdAt),
+                createdAt = message.createdAt // Or keep original? Usually last message time.
+            )
+            currentList.removeAt(chatIndex)
+            currentList.add(0, updatedChat)
+            _chats.value = currentList
+        } else {
+            // Optionally fetch the chat info if it's a new chat
+            // For now, we ignore it as we don't have full chat info
+        }
     }
 
     fun refreshChats() {
@@ -170,9 +226,6 @@ class CommunityChatsViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
-    fun clearChatJoinResult(){
-        _joinChatResult.value = null
-    }
     private fun parseErrorMessage(e: Exception): String {
         return if (e is retrofit2.HttpException) {
             try {

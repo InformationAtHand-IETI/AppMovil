@@ -1,5 +1,6 @@
-package edu.eci.co.informationathand.chat
+package edu.eci.co.informationathand.chat.websocket
 
+import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 
@@ -9,7 +10,7 @@ class ChatWebSocketListener(
     private val onClosed: () -> Unit
 ) : WebSocketListener() {
 
-    override fun onOpen(webSocket: WebSocket, response: okhttp3.Response) {
+    override fun onOpen(webSocket: WebSocket, response: Response) {
         onOpenConnection()
     }
 
@@ -17,7 +18,7 @@ class ChatWebSocketListener(
         onMessageReceived(text)
     }
 
-    override fun onFailure(webSocket: WebSocket, t: Throwable, response: okhttp3.Response?) {
+    override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
         t.printStackTrace()
     }
 

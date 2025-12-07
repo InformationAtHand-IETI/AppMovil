@@ -1,4 +1,4 @@
-package edu.eci.co.informationathand.chat
+package edu.eci.co.informationathand.chat.websocket
 
 import okhttp3.OkHttpClient
 import okhttp3.Request

@@ -1,18 +1,22 @@
-package edu.eci.co.informationathand.chat
+package edu.eci.co.informationathand.chat.fragment
 
 import CommunityChatsFragment
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
-import androidx.core.widget.addTextChangedListener
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
+import edu.eci.co.informationathand.MainMapActivity
 import edu.eci.co.informationathand.R
+import edu.eci.co.informationathand.chat.adapter.ChatSearchListAdapter
 import edu.eci.co.informationathand.chat.viewmodel.CommunityChatsViewModel
 import edu.eci.co.informationathand.databinding.FragmentSearchChatsBinding
 
@@ -50,15 +54,24 @@ class SearchChatsFragment : Fragment() {
         binding.rvChats.layoutManager = LinearLayoutManager(requireContext())
         binding.rvChats.adapter = adapter
 
+        binding.rvChats.addOnScrollListener(object : androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: androidx.recyclerview.widget.RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                if (!recyclerView.canScrollVertically(1)) {
+                    viewModel.loadMoreNewChatsResults()
+                }
+            }
+        })
+
         setupObservers()
 
         binding.etSearchChats.setOnEditorActionListener { v, actionId, event ->
-            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH ||
-                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE) {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH ||
+                actionId == EditorInfo.IME_ACTION_DONE) {
                 val query = v.text.toString()
                 if (query.isNotEmpty()) {
                     viewModel.searchNewChats(query)
-                    val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                    val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
                     imm.hideSoftInputFromWindow(v.windowToken, 0)
                 }
                 true
@@ -69,9 +82,9 @@ class SearchChatsFragment : Fragment() {
 
         binding.btnBack.setOnClickListener {
             val fragment = CommunityChatsFragment()
+            (activity as? MainMapActivity)?.showBottomNav()
             requireActivity().supportFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, fragment)
-                .addToBackStack(null)
                 .commit()
         }
     }

@@ -1,4 +1,4 @@
-package edu.eci.co.informationathand.chat
+package edu.eci.co.informationathand.chat.fragment
 
 import CommunityChatsFragment
 import android.os.Bundle

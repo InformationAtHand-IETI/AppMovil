@@ -1,4 +1,4 @@
-package edu.eci.co.informationathand.chat
+package edu.eci.co.informationathand.chat.fragment
 
 import CommunityChatsFragment
 import android.os.Bundle
@@ -9,8 +9,11 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import edu.eci.co.informationathand.MainMapActivity
 import edu.eci.co.informationathand.R
+import edu.eci.co.informationathand.chat.adapter.ChatMessageAdapter
 import edu.eci.co.informationathand.chat.viewmodel.CommunityChatViewModel
 import edu.eci.co.informationathand.chat.viewmodel.CommunityChatViewModelFactory
 import edu.eci.co.informationathand.databinding.FragmentChatOpenBinding
@@ -48,13 +51,13 @@ class CommunityChatFragment(): Fragment(){
         
         binding.tvChatTitle.text = chatName
         
-        val viewModel = ViewModelProvider(requireActivity(), CommunityChatViewModelFactory(requireActivity().application, chatId))[CommunityChatViewModel::class.java]
-        
+        val viewModel = ViewModelProvider(requireActivity(), CommunityChatViewModelFactory(requireActivity().application))
+            .get(CommunityChatViewModel::class.java)
+        viewModel.loadMessages(chatId)
         adapter = ChatMessageAdapter(emptyList())
-        val layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
+        val layoutManager = LinearLayoutManager(requireContext())
         binding.messagesRecyclerView.layoutManager = layoutManager
         binding.messagesRecyclerView.adapter = adapter
-        
         viewModel.messages.observe(viewLifecycleOwner) { messages ->
              val oldSize = adapter.itemCount
              adapter.updateMessages(messages)
@@ -67,16 +70,15 @@ class CommunityChatFragment(): Fragment(){
                  binding.messagesRecyclerView.scrollToPosition(newItemsCount)
              }
         }
-        binding.messagesRecyclerView.addOnScrollListener(object : androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: androidx.recyclerview.widget.RecyclerView, dx: Int, dy: Int) {
+        binding.messagesRecyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
                 if (!recyclerView.canScrollVertically(-1)) {
                     viewModel.fetchMessages(chatId)
                 }
             }
         })
-        
-        viewModel.loadMessages(chatId)
+
 
         binding.btnBack.setOnClickListener {
             val fragment = CommunityChatsFragment()
@@ -85,6 +87,14 @@ class CommunityChatFragment(): Fragment(){
                 .replace(R.id.fragment_container, fragment)
                 .addToBackStack(null)
                 .commit()
+        }
+
+        binding.btnSend.setOnClickListener {
+            val content = binding.etMessage.text.toString().trim()
+            if (content.isNotEmpty()) {
+                viewModel.sendMessage(content)
+                binding.etMessage.text.clear()
+            }
         }
 
     }

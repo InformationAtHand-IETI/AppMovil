@@ -7,15 +7,14 @@ import androidx.appcompat.widget.PopupMenu
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import edu.eci.co.informationathand.R
-import edu.eci.co.informationathand.chat.model.ChatModel
-import edu.eci.co.informationathand.chat.CreateChatFragment
-import edu.eci.co.informationathand.chat.SearchChatsFragment
+import edu.eci.co.informationathand.chat.fragment.CreateChatFragment
+import edu.eci.co.informationathand.chat.fragment.SearchChatsFragment
 import edu.eci.co.informationathand.databinding.FragmentCommunityChatsBinding
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.ViewModelProvider
 import edu.eci.co.informationathand.MainMapActivity
+import edu.eci.co.informationathand.chat.fragment.CommunityChatFragment
 import edu.eci.co.informationathand.chat.viewmodel.CommunityChatsViewModel
 
 class CommunityChatsFragment : Fragment() {
@@ -52,7 +51,7 @@ class CommunityChatsFragment : Fragment() {
         viewModel = ViewModelProvider(requireActivity())[CommunityChatsViewModel::class.java]
         
         adapter = ChatsAdapter { chat ->
-            val fragment = edu.eci.co.informationathand.chat.CommunityChatFragment().apply {
+            val fragment = CommunityChatFragment().apply {
                 arguments = Bundle().apply {
                     putString("chatId", chat.id)
                     putString("chatName", chat.name)
@@ -132,6 +131,7 @@ class CommunityChatsFragment : Fragment() {
                             .replace(R.id.fragment_container, fragment)
                             .addToBackStack(null)
                             .commit()
+                        (activity as? MainMapActivity)?.hideBottomNav()
                         true
                     }
 

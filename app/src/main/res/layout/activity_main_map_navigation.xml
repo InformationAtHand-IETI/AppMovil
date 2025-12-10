@@ -27,9 +27,26 @@
         android:background="#F5F5F5"
         android:visibility="gone"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottom_nav_container"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- 🔴 Botón Flotante ROJO - Crear Reporte -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_add_report"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:contentDescription="Crear Reporte"
+        android:src="@android:drawable/ic_input_add"
+        app:backgroundTint="#D32F2F"
+        app:tint="#FFFFFF"
+        app:elevation="8dp"
+        app:fabSize="normal"
+        app:borderWidth="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottom_nav_container" />
 
     <!-- 📱 Barra de navegación estilo iOS/moderna -->
     <androidx.cardview.widget.CardView
@@ -81,7 +98,6 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:text="Perfil"
-                    android:textColor="#9E9E9E"
                     android:textSize="11sp" />
             </LinearLayout>
 
@@ -111,7 +127,6 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:text="Chat"
-                    android:textColor="#9E9E9E"
                     android:textSize="11sp" />
             </LinearLayout>
 
@@ -156,13 +171,13 @@
                     android:layout_height="28dp"
                     android:src="@drawable/list_icon" />
 
+
                 <TextView
                     android:id="@+id/label_accidents"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:text="Accidentes"
-                    android:textColor="#9E9E9E"
                     android:textSize="11sp" />
             </LinearLayout>
 
@@ -185,13 +200,13 @@
                     android:layout_height="28dp"
                     android:src="@drawable/price_icon" />
 
+
                 <TextView
                     android:id="@+id/label_plans"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:text="Planes"
-                    android:textColor="#9E9E9E"
                     android:textSize="11sp" />
             </LinearLayout>
 

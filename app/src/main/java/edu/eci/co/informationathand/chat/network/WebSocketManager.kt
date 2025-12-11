@@ -11,7 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 object WebSocketManager {
-    private const val WS_URL = "wss://chatservice-etaffddncjh0bcgq.canadacentral-01.azurewebsites.net/ws?token="
+    private const val WS_URL = "wss://parchesecgateway.azure-api.net?token="
     private var webSocket: WebSocket? = null
     private val client = OkHttpClient()
     private val gson = Gson()

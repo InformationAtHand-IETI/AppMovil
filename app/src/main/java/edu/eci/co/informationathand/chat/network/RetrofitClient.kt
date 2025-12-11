@@ -9,7 +9,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
-    private const val BASE_URL = "https://chatservice-etaffddncjh0bcgq.canadacentral-01.azurewebsites.net/api/"
+    private const val BASE_URL = "https://parchesecgateway.azure-api.net/api/"
 
     fun create(authManager: MsalAuthManager): ChatApiService {
 

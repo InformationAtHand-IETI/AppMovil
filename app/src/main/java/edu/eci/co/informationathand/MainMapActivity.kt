@@ -29,6 +29,9 @@ import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import edu.eci.co.informationathand.utils.StorageHelper
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import retrofit2.Retrofit
@@ -40,7 +43,6 @@ import java.util.*
 
 // --- SECCIÓN DE RED (RETROFIT) ---
 
-// 1. Modelo de Respuesta (Lo que recibimos de Azure)
 data class DenunciaResponse(
     val id: String,
     val nombreDenunciante: String,
@@ -55,16 +57,14 @@ data class DenunciaResponse(
     val fechaExpiracion: String?
 )
 
-// 2. Modelo de Petición (Lo que enviamos al crear)
 data class DenunciaRequest(
     val nombreDenunciante: String,
     val latitud: Double,
     val longitud: Double,
-    val tipo: String,        // Debe ser GRAVE, LEVE, MEDIO, PROTESTA
+    val tipo: String,
     val descripcion: String
 )
 
-// 3. Interfaz
 interface ApiService {
     @GET("api/denuncias")
     suspend fun obtenerDenuncias(): List<DenunciaResponse>
@@ -73,9 +73,8 @@ interface ApiService {
     suspend fun crearDenuncia(@Body denuncia: DenunciaRequest): DenunciaResponse
 }
 
-// 4. Cliente Singleton
 object RetrofitClient {
-    private const val BASE_URL = "https://parchedenuncia-e8hyayg0fuavahc2.centralus-01.azurewebsites.net/"
+    private const val BASE_URL = "https://parchesecgateway.azure-api.net/denuncias/"
 
     val instance: ApiService by lazy {
         Retrofit.Builder()
@@ -93,9 +92,12 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var storageHelper: StorageHelper
 
+    // Variable para controlar el ciclo de actualización de 15s
+    private var updateJob: Job? = null
+
     // Botones Flotantes
-    private lateinit var fabMap: FloatingActionButton        // Centrar
-    private lateinit var fabAddReport: FloatingActionButton  // Nuevo Reporte (Rojo)
+    private lateinit var fabMap: FloatingActionButton
+    private lateinit var fabAddReport: FloatingActionButton
 
     private lateinit var fragmentContainer: FrameLayout
     private lateinit var mapFragment: SupportMapFragment
@@ -135,7 +137,7 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
 
         // Inicializar Views
         fabMap = findViewById(R.id.fab_map)
-        fabAddReport = findViewById(R.id.fab_add_report) // NUEVO BOTÓN
+        fabAddReport = findViewById(R.id.fab_add_report)
         fragmentContainer = findViewById(R.id.fragment_container)
 
         // Nav buttons
@@ -158,24 +160,46 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
         mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        // Navegación inferior
         setupNavigation()
 
-        // ACCIÓN BOTÓN CENTRAR MAPA
-        fabMap.setOnClickListener {
-            showMap()
-        }
+        fabMap.setOnClickListener { showMap() }
 
-        // ACCIÓN BOTÓN REPORTAR (ROJO)
-        fabAddReport.setOnClickListener {
-            createReportAtCurrentLocation()
-        }
+        fabAddReport.setOnClickListener { createReportAtCurrentLocation() }
 
-        // Sistema Back
         onBackPressedDispatcher.addCallback(this) {
             if (!isMapVisible) showMap() else finish()
         }
     }
+
+    // --- CICLO DE VIDA PARA AUTOMATIZAR EL REFRESH ---
+    override fun onResume() {
+        super.onResume()
+        startRepeatingUpdates() // Comienza a actualizar cada 15s al abrir la app
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopRepeatingUpdates() // Detiene la actualización al salir para ahorrar batería
+    }
+
+    private fun startRepeatingUpdates() {
+        updateJob?.cancel() // Cancela cualquier trabajo previo
+        updateJob = lifecycleScope.launch {
+            while (isActive) {
+                // Solo actualiza si el mapa es visible y ya está inicializado
+                if (isMapVisible && ::mMap.isInitialized) {
+                    Log.d("AUTO_UPDATE", "Consultando nuevos reportes...")
+                    loadReportsFromBackend()
+                }
+                delay(15000) // Espera 15 segundos
+            }
+        }
+    }
+
+    private fun stopRepeatingUpdates() {
+        updateJob?.cancel()
+    }
+    // -------------------------------------------------
 
     private fun setupNavigation() {
         navProfileBtn.setOnClickListener {
@@ -229,13 +253,13 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
 
         mMap.setOnInfoWindowClickListener(this)
 
-        // Opción alternativa: Long Click para reportar manualmente en otro lado
         mMap.setOnMapLongClickListener { latLng ->
             showCreateReportDialog(latLng)
         }
 
-        // Cargar datos al iniciar
-        loadReportsFromBackend()
+        // Nota: loadReportsFromBackend() se llamará automáticamente desde onResume() -> startRepeatingUpdates()
+        // así que no es estrictamente necesario llamarlo aquí, pero si quieres carga inmediata al milisegundo:
+        // loadReportsFromBackend()
     }
 
     private fun loadReportsFromBackend() {
@@ -243,15 +267,15 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
             try {
                 val denuncias = RetrofitClient.instance.obtenerDenuncias()
 
-                // --- ARREGLO 1: LIMPIAR EL MAPA ANTES DE PINTAR ---
-                mMap.clear()       // Borra los marcadores visuales viejos
-                allMarkers.clear() // Borra la lista de memoria
-                // --------------------------------------------------
+                // Verificamos si el mapa sigue vivo antes de tocar la UI
+                if (!::mMap.isInitialized) return@launch
+
+                mMap.clear()
+                allMarkers.clear()
 
                 denuncias.forEach { denuncia ->
                     val colorIcono = obtenerColorPorTipo(denuncia.tipo)
 
-                    // Mostrar conteo si hay más de 1 reporte agrupado
                     val tituloMarker = if(denuncia.conteo > 1) {
                         "📍 ${denuncia.tipo} (+${denuncia.conteo})"
                     } else {
@@ -277,6 +301,7 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
 
             } catch (e: Exception) {
                 e.printStackTrace()
+                Log.e("MAP_ERROR", "Error cargando reportes: ${e.message}")
             }
         }
     }
@@ -297,14 +322,14 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
         mapFragment.view?.visibility = View.VISIBLE
         selectNavItem("map")
         showBottomNav()
-        fabAddReport.visibility = View.VISIBLE  //
+        fabAddReport.visibility = View.VISIBLE
     }
 
     private fun showFragment(fragment: Fragment) {
         isMapVisible = false
         mapFragment.view?.visibility = View.GONE
         fragmentContainer.visibility = View.VISIBLE
-        fabAddReport.visibility = View.GONE  //
+        fabAddReport.visibility = View.GONE
 
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)
@@ -331,7 +356,6 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
             return
         }
 
-        // Obtener ubicación GPS y abrir diálogo
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
             location?.let {
                 showCreateReportDialog(LatLng(it.latitude, it.longitude))
@@ -340,6 +364,7 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
             }
         }
     }
+
     fun hideBottomNav() {
         findViewById<View>(R.id.bottom_nav_container).visibility = View.GONE
     }
@@ -348,18 +373,14 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
         findViewById<View>(R.id.bottom_nav_container).visibility = View.VISIBLE
     }
 
-    // --- DIÁLOGO CON SPINNER PARA EVITAR ERROR 400 ---
-    // Reemplaza esta función completa en MainMapActivity.kt
     private fun showCreateReportDialog(latLng: LatLng) {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_create_report, null)
 
-        // Referencias
         val spTipo = dialogView.findViewById<Spinner>(R.id.spReportType)
         val etDescripcion = dialogView.findViewById<EditText>(R.id.etReportDescription)
         val btnEnviar = dialogView.findViewById<Button>(R.id.btnSendReport)
         val btnCancelar = dialogView.findViewById<Button>(R.id.btnCancelReport)
 
-        // Llenar Spinner
         val tiposValidos = listOf("GRAVE", "MEDIO", "LEVE", "PROTESTA")
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, tiposValidos)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
@@ -374,11 +395,9 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
             val tipoSeleccionado = spTipo.selectedItem.toString()
             val descripcion = etDescripcion.text.toString().trim()
 
-            // --- 🔍 VALIDACIÓN DE LONGITUD (10 a 500 caracteres) ---
-
             if (descripcion.length < 10) {
                 etDescripcion.error = "Muy corta: Mínimo 10 caracteres."
-                etDescripcion.requestFocus() // Pone el cursor ahí para que escriban más
+                etDescripcion.requestFocus()
                 return@setOnClickListener
             }
 
@@ -388,9 +407,6 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
                 return@setOnClickListener
             }
 
-            // -------------------------------------------------------
-
-            // Si pasa la validación, enviamos:
             saveReportToBackend(latLng, tipoSeleccionado, descripcion)
             dialog.dismiss()
         }
@@ -407,26 +423,21 @@ class MainMapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnInf
 
         lifecycleScope.launch {
             try {
-                // 1. OBTENER EL NOMBRE REAL DEL USUARIO
-                // Tu StorageHelper devuelve String?, así que usamos el operador elvis (?:)
-                // para poner un valor por defecto si es nulo.
                 val nombreUsuario = storageHelper.getUserName() ?: "Usuario Anónimo"
 
                 val nuevoReporte = DenunciaRequest(
-                    nombreDenunciante = nombreUsuario, // <--- AQUÍ SE ENVÍA EL NOMBRE REAL
+                    nombreDenunciante = nombreUsuario,
                     latitud = latLng.latitude,
                     longitud = latLng.longitude,
                     tipo = tipo,
                     descripcion = descripcion
                 )
 
-                // 2. Enviar el reporte al Backend
                 RetrofitClient.instance.crearDenuncia(nuevoReporte)
 
-                // 3. Éxito
                 Toast.makeText(this@MainMapActivity, "✅ Reporte enviado por $nombreUsuario", Toast.LENGTH_SHORT).show()
 
-                // Recargar mapa para ver el nuevo pin con la info actualizada
+                // Recargar mapa inmediatamente para ver el propio reporte
                 loadReportsFromBackend()
 
                 mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))

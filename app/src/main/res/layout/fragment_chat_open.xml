@@ -81,6 +81,7 @@
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:hint="Escribe un mensaje..."
+            android:textColorHint="#CCCCCC"
             android:textColor="@android:color/black"
             android:background="@android:color/white"
             android:paddingStart="16dp"

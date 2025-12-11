@@ -65,6 +65,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Buscar chats por nombre, zona o barrio"
+            android:textColor="#000000"
             android:inputType="text"
             android:textSize="16sp"
             android:imeOptions="actionSearch" />

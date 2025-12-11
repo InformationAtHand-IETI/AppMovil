@@ -37,6 +37,7 @@
         android:layout_height="wrap_content"
         app:hintEnabled="false"
         app:boxStrokeColor="#1A257A"
+        android:textColor="#000000"
         app:boxCornerRadiusTopStart="16dp"
         app:boxCornerRadiusTopEnd="16dp"
         app:boxCornerRadiusBottomStart="16dp"
@@ -54,6 +55,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Buscar chats"
+            android:textColor="#000000"
+            android:textColorHint="#CCCCCC"
             android:textSize="16sp"
             android:inputType="text"
             android:imeOptions="actionSearch" />
